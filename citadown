@@ -120,13 +120,14 @@ class App
     when Net::HTTPSuccess
       authors = []
       result = content.body
-      result.each do |line|
-        authors << $1 if line =~ /<li><a[^>]*>(.*?)<\/a><\/li>/m
+      result.each_line do |line|
+        authors << $1 if line =~ /<li><a[^>]*>(.*?)<\/a><\/li>/
       end
       select_author(authors)
     when Net::HTTPRedirection
       author = $1 if content['location'] =~ /^#{DBLP_DB}(.+)\.html$/
-      get_keys(author)
+      keys = get_keys(author)
+      keys.each {|key| print get_bibtex(key)}
     else
       content.error!
     end
@@ -138,9 +139,9 @@ class App
   end
 
   def get_keys(author)
-    puts "Downloading citations for author #{author}." if @options.verbose
+    puts "% Downloading citations for author #{author}." if @options.verbose
     url = DBLP_AUTHORS + author + "/xk"
-    puts "URL: #{url}" if @options.verbose
+    puts "% URL: #{url}" if @options.verbose
 
     publications = Net::HTTP.get_response(URI.parse(url)).body
 
@@ -149,14 +150,15 @@ class App
     doc.elements.each('dblpperson/dblpkey') do |e|
       dblpkeys << e.text
     end
+    return dblpkeys
+  end
 
+  def get_bibtex(key)
     bibentries = []
-    dblpkeys.each do |key|
-      data = Net::HTTP.get_response(URI.parse("#{DBLP_BIBTEX}#{key}")).body
-      entry = $1 if data =~ /<pre>(.*?)<\/pre>/m
-      bibentries << entry.gsub(/<a[^>]*>/m, '').gsub(/<\/a>/m, '')
-    end
-    print_entries(bibentries)
+    data = Net::HTTP.get_response(URI.parse("#{DBLP_BIBTEX}#{key}")).body
+    entry = $1 if data =~ /<pre>(.*)<\/pre>/m
+    bibentries << entry.gsub(/<(\w+)[^>]*>/m, '').gsub(/<\/\w+>/m, '')
+    return bibentries
   end
 
   def print_entries(entries)
