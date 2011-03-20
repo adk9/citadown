@@ -116,6 +116,7 @@ class App
       author = @arguments[0] + ":"
     elsif @arguments.length == 2
       author = @arguments[1] + ":" + @arguments[0]
+      author = @arguments[0] + ":" + @arguments[1]
     elsif @arguments.length == 3
       author = @arguments[2] + ":" + @arguments[0] + "_" + @arguments[1]
       author = @arguments[2] + ":" + @arguments[0] + "=" + @arguments[1]
