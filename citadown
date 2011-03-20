@@ -20,8 +20,8 @@
 #
 # == Options
 #   -h, --help          Display this help message
-#   -v, --version       Display the version and exit
-#   -V, --verbose       Verbose output
+#   -V, --version       Display the version and exit
+#   -v, --verbose       Verbose output
 #
 # == Author
 #   Abhishek Kulkarni
@@ -83,9 +83,9 @@ class App
   def parsed_options?    
     # Specify options
     opts = OptionParser.new 
-    opts.on('-v', '--version')    { output_version ; exit 0 }
+    opts.on('-V', '--version')    { output_version ; exit 0 }
     opts.on('-h', '--help')       { output_help }
-    opts.on('-V', '--verbose')    { @options.verbose = true }
+    opts.on('-v', '--verbose')    { @options.verbose = true }
 
     opts.parse!(@arguments) rescue return false
     true
@@ -110,14 +110,21 @@ class App
   end
   
   def process_args
-    @authors << @arguments.join(":")
-    @authors << @arguments.reverse.join(":")
+    if @arguments.length == 1
+      @authors << @arguments[0] + ":"
+    elsif @arguments.length == 2
+      @authors << @arguments[1] + ":" + @arguments[0]
+    elsif @arguments.length == 3
+      @authors << @arguments[2] + ":" + @arguments[0] + "_" + @arguments[1]
+    end
     @authors.each { |a| get_keys(a) }
   end
 
   def get_keys(author)
+    puts "Checking citations for author #{author}." if @options.verbose
     url = DBLP_AUTHORS + author[0].chr.downcase
     url += "/" + author + "/xk"
+    puts "URL: #{url}" if @options.verbose
 
     # get the XML data as a string
     xml_data = Net::HTTP.get_response(URI.parse(url)).body
