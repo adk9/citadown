@@ -1,26 +1,28 @@
 #!/usr/bin/env ruby
 
 # == Synopsis 
-# CitaDown 0.1
-#
 # This is a simple CLI utility to download (BibTex) citations
-# of known authors.
+# of known authors from DBLP.
 #
-# == Examples
+# == Description
+#    Here are some examples of how to use citadown:
 #     citadown Matthew Might > might.bib
-#
-#   Other examples:
 #     citadown --verbose Matthew Might > might.bib
 #     citadown -V Filinski > filinski.bib
+#
+#    The DBLP citations often are very verbose and include details like
+#    the page numbers (from the journal that the paper appeared in), the
+#    source, the link to the electronic edition etc. citadown allows you
+#    to define a set of tags that you would like to ignore and exclude from
+#    the generated bibTex file. By default, it looks for a file .ignore in
+#    the CWD for the keywords to ignore.
 #
 # == Usage 
 #   citadown [options]
 #
-#   For help use: citadown -h
-#
-# == Options
+#   Options:
 #   -h, --help          Display this help message
-#   -V, --version       Display the version and exit
+#   -V, --version       Display the version
 #   -v, --verbose       Verbose output
 #
 # == Author
@@ -55,7 +57,7 @@ require 'net/http'
 require 'rexml/document'
 
 class App
-  VERSION = '0.1'
+  VERSION = '0.1.4'
   DBLP_SERVER = "http://dblp.uni-trier.de/rec/"
   DBLP_AUTHORS = DBLP_SERVER + "pers/"
   DBLP_BIBTEX = DBLP_SERVER + "bibtex/"
@@ -106,17 +108,20 @@ class App
   end
   
   def output_version
-    puts "#{File.basename(__FILE__)} version #{VERSION}"
+    puts "#{File.basename(__FILE__)} v#{VERSION}"
   end
   
   def process_args
     if @arguments.length == 1
-      @authors << @arguments[0] + ":"
+      author = @arguments[0] + ":"
     elsif @arguments.length == 2
-      @authors << @arguments[1] + ":" + @arguments[0]
+      author = @arguments[1] + ":" + @arguments[0]
     elsif @arguments.length == 3
-      @authors << @arguments[2] + ":" + @arguments[0] + "_" + @arguments[1]
+      author = @arguments[2] + ":" + @arguments[0] + "_" + @arguments[1]
+      author = @arguments[2] + ":" + @arguments[0] + "=" + @arguments[1]
+      author = @arguments[1] + "=" + @arguments[2] + ":" + @arguments[0]
     end
+    @authors << author.gsub(/[\.\-]/, '=')
     @authors.each { |a| get_keys(a) }
   end
 
@@ -141,7 +146,24 @@ class App
       entry = $1 if data =~ /<pre>(.*?)<\/pre>/m
       bibentries << entry.gsub(/<a[^>]*>/m, '').gsub(/<\/a>/m, '')
     end
-    print bibentries
+    print_entries(bibentries)
+  end
+
+  def print_entries(entries)
+    if File.exists?(".ignore")
+      ignore_entries = File.open(".ignore", "r") { |f| f.read }
+      entries.each do |entry|
+        entry.each_line do |e|
+          ignore = false
+          ignore_entries.each do |ie|
+            ignore = true if e =~ /^\s*#{ie.chomp}\s*=/
+          end
+          print e if not ignore
+        end
+      end
+    else
+      print entries
+    end
   end
 end
 
