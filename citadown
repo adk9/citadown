@@ -58,9 +58,10 @@ require 'rexml/document'
 
 class App
   VERSION = '0.1.4'
-  DBLP_SERVER = "http://dblp.uni-trier.de/rec/"
-  DBLP_AUTHORS = DBLP_SERVER + "pers/"
-  DBLP_BIBTEX = DBLP_SERVER + "bibtex/"
+  DBLP_SERVER = "http://dblp.uni-trier.de/"
+  DBLP_DB = DBLP_SERVER + "db/indices/a-tree/"
+  DBLP_AUTHORS = DBLP_SERVER + "rec/pers/"
+  DBLP_BIBTEX = DBLP_SERVER + "rec/bibtex/"
   attr_reader :options
   attr_accessor :authors
 
@@ -70,7 +71,6 @@ class App
     
     @options = OpenStruct.new
     @options.verbose = false
-    @authors = []
   end
 
   def run
@@ -112,30 +112,39 @@ class App
   end
   
   def process_args
-    if @arguments.length == 1
-      author = @arguments[0] + ":"
-    elsif @arguments.length == 2
-      author = @arguments[1] + ":" + @arguments[0]
-      author = @arguments[0] + ":" + @arguments[1]
-    elsif @arguments.length == 3
-      author = @arguments[2] + ":" + @arguments[0] + "_" + @arguments[1]
-      author = @arguments[2] + ":" + @arguments[0] + "=" + @arguments[1]
-      author = @arguments[1] + "=" + @arguments[2] + ":" + @arguments[0]
+    url = DBLP_SERVER + "search/author/"
+    url += URI.escape(@arguments.join(" "))
+
+    content = Net::HTTP.get_response(URI.parse(url))
+    case content
+    when Net::HTTPSuccess
+      authors = []
+      result = content.body
+      result.each do |line|
+        authors << $1 if line =~ /<li><a[^>]*>(.*?)<\/a><\/li>/m
+      end
+      select_author(authors)
+    when Net::HTTPRedirection
+      author = $1 if content['location'] =~ /^#{DBLP_DB}(.+)\.html$/
+      get_keys(author)
+    else
+      content.error!
     end
-    @authors << author.gsub(/[\.\-]/, '=')
-    @authors.each { |a| get_keys(a) }
+  end
+
+  def select_author(authors)
+    puts "Did you mean?"
+    print authors.join("\n")
   end
 
   def get_keys(author)
-    puts "Checking citations for author #{author}." if @options.verbose
-    url = DBLP_AUTHORS + author[0].chr.downcase
-    url += "/" + author + "/xk"
+    puts "Downloading citations for author #{author}." if @options.verbose
+    url = DBLP_AUTHORS + author + "/xk"
     puts "URL: #{url}" if @options.verbose
 
-    # get the XML data as a string
-    xml_data = Net::HTTP.get_response(URI.parse(url)).body
+    publications = Net::HTTP.get_response(URI.parse(url)).body
 
-    doc = REXML::Document.new(xml_data)
+    doc = REXML::Document.new(publications)
     dblpkeys = []
     doc.elements.each('dblpperson/dblpkey') do |e|
       dblpkeys << e.text
