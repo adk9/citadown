@@ -1,0 +1,142 @@
+#!/usr/bin/env ruby
+
+# == Synopsis 
+# CitaDown 0.1
+#
+# This is a simple CLI utility to download (BibTex) citations
+# of known authors.
+#
+# == Examples
+#     citadown Matthew Might > might.bib
+#
+#   Other examples:
+#     citadown --verbose Matthew Might > might.bib
+#     citadown -V Filinski > filinski.bib
+#
+# == Usage 
+#   citadown [options]
+#
+#   For help use: citadown -h
+#
+# == Options
+#   -h, --help          Display this help message
+#   -v, --version       Display the version and exit
+#   -V, --verbose       Verbose output
+#
+# == Author
+#   Abhishek Kulkarni
+#
+# == Copyright
+#   Copyright (c) 2011 Abhishek Kulkarni. Licensed under the MIT License:
+#   http://www.opensource.org/licenses/mit-license.php
+
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+# THE SOFTWARE.
+
+require 'optparse'
+require 'rdoc/usage'
+require 'ostruct'
+require 'net/http'
+require 'rexml/document'
+
+class App
+  VERSION = '0.1'
+  DBLP_SERVER = "http://dblp.uni-trier.de/rec/"
+  DBLP_AUTHORS = DBLP_SERVER + "pers/"
+  DBLP_BIBTEX = DBLP_SERVER + "bibtex/"
+  attr_reader :options
+  attr_accessor :authors
+
+  def initialize(arguments, stdin)
+    @arguments = arguments
+    @stdin = stdin
+    
+    @options = OpenStruct.new
+    @options.verbose = false
+    @authors = []
+  end
+
+  def run
+    if parsed_options? && arguments_valid?
+      process_args
+    else
+      output_usage
+    end
+  end
+
+  protected
+  def parsed_options?    
+    # Specify options
+    opts = OptionParser.new 
+    opts.on('-v', '--version')    { output_version ; exit 0 }
+    opts.on('-h', '--help')       { output_help }
+    opts.on('-V', '--verbose')    { @options.verbose = true }
+
+    opts.parse!(@arguments) rescue return false
+    true
+  end
+
+  # True if required arguments were provided
+  def arguments_valid?
+    true if @arguments.length >= 1
+  end
+
+  def output_help
+    output_version
+    RDoc::usage()
+  end
+  
+  def output_usage
+    RDoc::usage('usage')
+  end
+  
+  def output_version
+    puts "#{File.basename(__FILE__)} version #{VERSION}"
+  end
+  
+  def process_args
+    @authors << @arguments.join(":")
+    @authors << @arguments.reverse.join(":")
+    @authors.each { |a| get_keys(a) }
+  end
+
+  def get_keys(author)
+    url = DBLP_AUTHORS + author[0].chr.downcase
+    url += "/" + author + "/xk"
+
+    # get the XML data as a string
+    xml_data = Net::HTTP.get_response(URI.parse(url)).body
+
+    doc = REXML::Document.new(xml_data)
+    dblpkeys = []
+    doc.elements.each('dblpperson/dblpkey') do |e|
+      dblpkeys << e.text
+    end
+
+    bibentries = []
+    dblpkeys.each do |key|
+      data = Net::HTTP.get_response(URI.parse("#{DBLP_BIBTEX}#{key}")).body
+      entry = $1 if data =~ /<pre>(.*?)<\/pre>/m
+      bibentries << entry.gsub(/<a[^>]*>/m, '').gsub(/<\/a>/m, '')
+    end
+    print bibentries
+  end
+end
+
+app = App.new(ARGV, STDIN)
+app.run
