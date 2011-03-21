@@ -167,6 +167,7 @@ class App
       entries = File.open(@options.input, "r") { |f| f.read }
       entries.each do |entry|
         next if entry =~ /^#.*$/
+        next if entry =~ /^$/
         if entry =~ /^\s*author=(.+)$/
           authors = get_authors($1)
           if authors.length == 1
