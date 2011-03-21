@@ -23,7 +23,7 @@
 #    the page numbers (from the journal that the paper appeared in), the
 #    source, the link to the electronic edition etc. citadown allows you
 #    to define a set of tags that you would like to ignore and exclude from
-#    the generated bibTex file. By default, it looks for a file .ignore in
+#    the generated bibTex file. By default, it looks for a file ignore_fields in
 #    the CWD for the keywords to ignore.
 #
 # == Usage 
@@ -239,8 +239,8 @@ class App
 
   def print_entries(entries)
     entry_keys = []
-    if File.exists?(".ignore")
-      ignore_entries = File.open(".ignore", "r") { |f| f.read }
+    if File.exists?("ignore_fields")
+      ignore_entries = File.open("ignore_fields", "r") { |f| f.read }
       entries.each do |entry|
         key = $1 if entry.first =~ /^@\w+\{(.+),$/
         next if entry_keys.include?(key)
