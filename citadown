@@ -295,13 +295,13 @@ class App
       entries.each do |entry|
         key = $1 if entry.first =~ /^@\w+\{(.+),$/
         next if entry_keys.include?(key)
-        # premature knuth is the optimisation of all evil. 
-        entry_keys << key
         entry.each do |e|
-           ignore = false
+          ignore = false
           ignore_entries.each {|ie| ignore = true if e =~ /^\s*#{ie.chomp}\s*=/ }
           dblp.print e if not ignore
         end
+        # premature knuth is the optimisation of all evil. 
+        entry_keys << key
       end
     else
       dblp.print entries
