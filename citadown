@@ -239,7 +239,8 @@ class App
       if entry
         # get rid of the html tags
         entry = entry.gsub(/<(\w+)[^>]*>/m, '')
-        entries << entry.gsub(/<\/\w+>/m, '')
+        entry = entry.gsub(/<\/\w+>/m, '')
+        entries += entry.split(/^$/)
       else
         puts "% No entry found for ID #{key}." if @options.verbose
       end
@@ -295,11 +296,13 @@ class App
       entries.each do |entry|
         key = $1 if entry.first =~ /^@\w+\{(.+),$/
         next if entry_keys.include?(key)
-        entry.each do |e|
-          ignore = false
-          ignore_entries.each {|ie| ignore = true if e =~ /^\s*#{ie.chomp}\s*=/ }
-          dblp.print e if not ignore
+        a = entry.to_a
+        ignore_entries.each do |ie|
+          a.reject!{|l| l =~ /^\s*#{ie.chomp}\s*=.*$/}
         end
+        sle = a[-2]
+        sle[sle.length - 2] = '' if sle[sle.length - 2] == 44
+        dblp.print a.join
         # premature knuth is the optimisation of all evil. 
         entry_keys << key
       end
