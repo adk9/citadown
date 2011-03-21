@@ -237,8 +237,10 @@ class App
     end
   end
 
+  # this function is a mess. 
   def print_entries(entries)
     entry_keys = []
+    dblp = File.new("dblp.bib", "w")
     if File.exists?("ignore_fields")
       ignore_entries = File.open("ignore_fields", "r") { |f| f.read }
       entries.each do |entry|
@@ -249,12 +251,14 @@ class App
         entry.each do |e|
            ignore = false
           ignore_entries.each {|ie| ignore = true if e =~ /^\s*#{ie.chomp}\s*=/ }
-          print e if not ignore
+          dblp.print e if not ignore
         end
       end
     else
-      print entries
+      dblp.print entries
     end
+    dblp.close()
+    puts "Wrote dblp.bib"
   end
 end
 
