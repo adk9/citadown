@@ -141,13 +141,16 @@ class App
     if @options.author.length >= 1
       @options.author.each do |a|
         authors = get_authors(a)
-
-        # we have multiple authors, select one.
-        if authors.length > 1
+        if authors.length == 0
+          puts "% Unknown author #{a}."
+          return
+        elsif authors.length > 1
+          # we have multiple authors, select one.
           select_author(authors)
+          return
         else
           keys = get_keys(authors[0])
-          keys.each {|key| bibentries += get_bibtex(key)}
+          keys.each {|key| bibentries += get_bibtex(key)} if keys
         end
       end
     elsif @options.key.length >= 1
@@ -175,7 +178,7 @@ class App
             }
             bar.finish
           else
-            puts "% Ignoring ambiguous author #{$1}"
+            puts "% Unknown author #{$1}"
           end
         elsif entry =~ /^\s*key=(.+)$/
           puts "% Downloading bibTex for ID #{$1}." if @options.verbose
@@ -216,6 +219,7 @@ class App
   end
 
   def get_keys(author)
+    return nil if not author
     puts "% Downloading citations for author #{author}." if @options.verbose
     url = DBLP_AUTHORS + author + "/xk"
     puts "% URL: #{url}" if @options.verbose
