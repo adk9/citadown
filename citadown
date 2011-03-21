@@ -6,9 +6,18 @@
 #
 # == Description
 #    Here are some examples of how to use citadown:
-#     citadown Matthew Might > might.bib
-#     citadown --verbose Matthew Might > might.bib
-#     citadown -V Filinski > filinski.bib
+#     citadown -v -a filinski > filinski.bib
+#     citadown -v -a "per martin lof" -a "grigori mints" > pml.bib
+#     citadown -k "DBLP:conf/lics/CoquandS06"
+#     citadown -k "conf/popl/2010"
+#     citadown -i sample_entries
+#
+#    All the (author and key) entries to read the citations from can be
+#    specified in an input file passed as a runtime parameter to citadown.
+#    The format of the input file is:
+#    author=author1
+#    author=author2
+#    key=DBLPkey1
 #
 #    The DBLP citations often are very verbose and include details like
 #    the page numbers (from the journal that the paper appeared in), the
