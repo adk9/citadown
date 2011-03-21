@@ -73,6 +73,7 @@ class App
   DBLP_SERVER = "http://dblp.uni-trier.de/"
   DBLP_DB = DBLP_SERVER + "db/indices/a-tree/"
   DBLP_AUTHORS = DBLP_SERVER + "rec/pers/"
+  DBLP_CONF = DBLP_SERVER + "db/conf/"
   DBLP_BIBTEX = DBLP_SERVER + "rec/bibtex/"
 
   attr_reader :options
@@ -86,6 +87,7 @@ class App
     @options.verbose = false
     @options.author = []
     @options.key = []
+    @options.conf = []
     @options.input = nil
   end
 
@@ -106,6 +108,7 @@ class App
     opts.on('-v', '--verbose')       { @options.verbose = true }
     opts.on('-a', '--author NAME')   { |a| @options.author << a }
     opts.on('-k', '--key ID')        { |k| @options.key << k }
+    opts.on('-c', '--conf NAME')     { |c| @options.conf << c }
     opts.on('-i', '--input FILE')    { |f| @options.input = f }
 
     opts.parse!(@arguments) rescue return false
@@ -115,7 +118,7 @@ class App
   # True if required arguments were provided
   def arguments_valid?
     true if @options.author.length >= 1 or @options.key.length >= 1 or
-      @options.input != nil
+      @options.conf.length >= 1 or @options.input != nil
   end
 
   def output_help
@@ -150,6 +153,11 @@ class App
         puts "% Downloading bibTex for ID #{k}." if @options.verbose
         bibentries += get_bibtex(k)
       end
+    elsif @options.conf.length >= 1
+      @options.conf.each do |c|
+        puts "% Downloading bibTex for conference #{c}." if @options.verbose
+        bibentries += get_conf(c)
+      end
     elsif @options.input
       entries = File.open(@options.input, "r") { |f| f.read }
       entries.each do |entry|
@@ -165,6 +173,9 @@ class App
         elsif entry =~ /^\s*key=(.+)$/
           puts "% Downloading bibTex for ID #{$1}." if @options.verbose
           bibentries += get_bibtex($1)
+        elsif entry =~ /^\s*conf=(.+)$/
+          puts "% Downloading bibTex for conf #{$1}." if @options.verbose
+          bibentries += get_conf($1)
         else
           puts "% Ignoring invalid entry #{$1}"
         end
@@ -235,6 +246,44 @@ class App
     else
       content.error!
     end
+  end
+
+  def get_conf(conf)
+    entries = []
+    url = DBLP_CONF + conf.downcase
+    puts "% URL: #{url}/index.html" if @options.verbose
+
+    content = Net::HTTP.get_response(URI.parse(url + "/index.html"))
+    case content
+    when Net::HTTPSuccess
+      links = []
+      content.body.each_line do |line|
+        entry = $1 if line =~ /^.*<a href="([^\/]+\.html)">Contents<\/a>.*$/
+        links << entry if entry
+      end
+    else
+      content.error!
+    end
+
+    bentries = []
+    links.each do |link|
+      puts "% Found: #{link}" if @options.verbose
+      data = Net::HTTP.get_response(URI.parse(url + "/" + link))
+      case data
+      when Net::HTTPSuccess
+        data.body.each_line do |line|
+          entry = $1 if line =~ /^.*<a href="#{DBLP_BIBTEX}([^>]+)\.xml">.*$/
+          bentries << entry if entry
+        end
+      else
+        data.error!
+      end
+    end
+    bentries.each do |b|
+      puts "% Downloading bibTex for ID #{b}." if @options.verbose
+      entries += get_bibtex(b)
+    end
+    return entries
   end
 
   def print_entries(entries)
