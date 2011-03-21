@@ -33,9 +33,10 @@
 #   -h, --help          Display this help message
 #   -V, --version       Display the version
 #   -v, --verbose       Verbose output
-#   -a, --author NAME   Name of the author
-#   -k, --key ID        DBLP ID for the bibTex entry
-#   -i, --input FILE    File to read the entries from 
+#   -a, --author NAME   Name of the author (eg. filinski)
+#   -k, --key ID        DBLP ID for the bibTex entry (eg. conf/padl/LiT10)
+#   -c, --conf NAME     Name of the conference (eg. POPL)
+#   -i, --input FILE    File to read the entries from
 #
 # == Author
 #   Abhishek Kulkarni
