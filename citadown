@@ -97,7 +97,7 @@ class App
     opts.on('-v', '--verbose')       { @options.verbose = true }
     opts.on('-a', '--author NAME')   { |a| @options.author << a }
     opts.on('-k', '--key ID')        { |k| @options.key << k }
-    opts.on('-i', '--input FILE')    { |i| @options.input = f }
+    opts.on('-i', '--input FILE')    { |f| @options.input = f }
 
     opts.parse!(@arguments) rescue return false
     true
@@ -105,10 +105,8 @@ class App
 
   # True if required arguments were provided
   def arguments_valid?
-    valid = false
-    valid = true if @options.author.length >= 1 or @options.key.length >= 1
-    valid = valid or not @options.input
-    return valid
+    true if @options.author.length >= 1 or @options.key.length >= 1 or
+      @options.input != nil
   end
 
   def output_help
@@ -125,6 +123,7 @@ class App
   end
   
   def process_args
+    bibentries = []
     if @options.author.length >= 1
       @options.author.each do |a|
         authors = get_authors(a)
@@ -134,34 +133,36 @@ class App
           select_author(authors)
         else
           keys = get_keys(authors[0])
-          keys.each {|key| print_entries(get_bibtex(key))}
+          keys.each {|key| bibentries += get_bibtex(key)}
         end
       end
     elsif @options.key.length >= 1
       @options.key.each do |k|
         puts "% Downloading bibTex for ID #{k}." if @options.verbose
-        print_entries(get_bibtex(k))
+        bibentries += get_bibtex(k)
       end
-    elsif not @options.input
-      entries = File.open(".ignore", "r") { |f| f.read }
+    elsif @options.input
+      entries = File.open(@options.input, "r") { |f| f.read }
       entries.each do |entry|
         if entry =~ /^\s*author=(.+)$/
           authors = get_authors($1)
           if authors.length <= 1
             keys = get_keys(authors[0])
-            keys.each {|key| print_entries(get_bibtex(key))}
+            keys.each {|key| bibentries += get_bibtex(key)}
           else
             puts "% Ignoring ambiguous author #{$1}"
           end
         elsif entry =~ /^\s*key=(.+)$/
           puts "% Downloading bibTex for ID #{$1}." if @options.verbose
-          print_entries(get_bibtex($1))
+          bibentries += get_bibtex($1)
         else
           puts "% Ignoring invalid entry #{$1}"
         end
+      end
     else
       output_usage
     end
+    print_entries(bibentries)
   end
 
   def get_authors(authors)
@@ -206,7 +207,7 @@ class App
   end
 
   def get_bibtex(key)
-    bibentries = []
+    entries = []
     key = $1 if key =~ /^\w*:(.+)$/
 
     content = Net::HTTP.get_response(URI.parse("#{DBLP_BIBTEX}#{key}"))
@@ -216,22 +217,26 @@ class App
       if entry
         # get rid of the html tags
         entry = entry.gsub(/<(\w+)[^>]*>/m, '')
-        bibentries << entry.gsub(/<\/\w+>/m, '')
+        entries << entry.gsub(/<\/\w+>/m, '')
       else
         puts "% No entry found for ID #{key}." if @options.verbose
       end
-      return bibentries
+      return entries
     else
       content.error!
     end
   end
 
   def print_entries(entries)
+    entry_keys = []
     if File.exists?(".ignore")
       ignore_entries = File.open(".ignore", "r") { |f| f.read }
       entries.each do |entry|
-        entry.each_line do |e|
-          ignore = false
+        key = $1 if entry.first =~ /^@\w+\{(.+),$/
+        next if entry_keys.include?(key)
+        entry_keys << key
+        entry.each do |e|
+           ignore = false
           ignore_entries.each {|ie| ignore = true if e =~ /^\s*#{ie.chomp}\s*=/ }
           print e if not ignore
         end
