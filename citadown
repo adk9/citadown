@@ -244,6 +244,7 @@ class App
       entries.each do |entry|
         key = $1 if entry.first =~ /^@\w+\{(.+),$/
         next if entry_keys.include?(key)
+        # premature knuth is the optimisation of all evil. 
         entry_keys << key
         entry.each do |e|
            ignore = false
