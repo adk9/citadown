@@ -179,7 +179,8 @@ class App
             }
             bar.finish
           else
-            puts "% Unknown author #{$1}"
+            puts "% Unknown author #{$1} :"
+            puts "% Possibly #{authors.join(", ")}"
           end
         elsif entry =~ /^\s*key=(.+)$/
           puts "% Downloading bibTex for ID #{$1}." if @options.verbose
@@ -220,7 +221,7 @@ class App
 
   def select_author(authors)
     puts "Did you mean?"
-    print authors.join("\n")
+    print authors.join("\n") + "\n"
   end
 
   def get_keys(author)
