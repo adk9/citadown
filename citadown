@@ -1,0 +1,310 @@
+#!/usr/bin/env ruby
+
+# == Synopsis 
+# This is a simple CLI utility to download (BibTex) citations
+# of known authors from DBLP.
+#
+# == Description
+#    Here are some examples of how to use citadown:
+#     citadown -v -a filinski > filinski.bib
+#     citadown -v -a "per martin lof" -a "grigori mints" > pml.bib
+#     citadown -k "DBLP:conf/lics/CoquandS06"
+#     citadown -k "conf/popl/2010"
+#     citadown -i sample_entries
+#
+#    All the (author and key) entries to read the citations from can be
+#    specified in an input file passed as a runtime parameter to citadown.
+#    The format of the input file is:
+#    author=author1
+#    author=author2
+#    key=DBLPkey1
+#
+#    The DBLP citations often are very verbose and include details like
+#    the page numbers (from the journal that the paper appeared in), the
+#    source, the link to the electronic edition etc. citadown allows you
+#    to define a set of tags that you would like to ignore and exclude from
+#    the generated bibTex file. By default, it looks for a file .ignore in
+#    the CWD for the keywords to ignore.
+#
+# == Usage 
+#   citadown [options]
+#
+#   Options:
+#   -h, --help          Display this help message
+#   -V, --version       Display the version
+#   -v, --verbose       Verbose output
+#   -a, --author NAME   Name of the author
+#   -k, --key ID        DBLP ID for the bibTex entry
+#   -i, --input FILE    File to read the entries from 
+#
+# == Author
+#   Abhishek Kulkarni
+#
+# == Copyright
+#   Copyright (c) 2011 Abhishek Kulkarni. Licensed under the MIT License:
+#   http://www.opensource.org/licenses/mit-license.php
+
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+# THE SOFTWARE.
+
+require 'optparse'
+require 'rdoc/usage'
+require 'ostruct'
+require 'net/http'
+require 'rexml/document'
+
+class App
+  VERSION = '0.1.4'
+  DBLP_SERVER = "http://dblp.uni-trier.de/"
+  DBLP_DB = DBLP_SERVER + "db/indices/a-tree/"
+  DBLP_AUTHORS = DBLP_SERVER + "rec/pers/"
+  DBLP_CONF = DBLP_SERVER + "db/conf/"
+  DBLP_BIBTEX = DBLP_SERVER + "rec/bibtex/"
+
+  attr_reader :options
+  attr_accessor :authors
+
+  def initialize(arguments, stdin)
+    @arguments = arguments
+    @stdin = stdin
+    
+    @options = OpenStruct.new
+    @options.verbose = false
+    @options.author = []
+    @options.key = []
+    @options.conf = []
+    @options.input = nil
+  end
+
+  def run
+    if parsed_options? && arguments_valid?
+      process_args
+    else
+      output_usage
+    end
+  end
+
+  protected
+  def parsed_options?    
+    # Specify options
+    opts = OptionParser.new
+    opts.on('-V', '--version')       { output_version ; exit 0 }
+    opts.on('-h', '--help')          { output_help }
+    opts.on('-v', '--verbose')       { @options.verbose = true }
+    opts.on('-a', '--author NAME')   { |a| @options.author << a }
+    opts.on('-k', '--key ID')        { |k| @options.key << k }
+    opts.on('-c', '--conf NAME')     { |c| @options.conf << c }
+    opts.on('-i', '--input FILE')    { |f| @options.input = f }
+
+    opts.parse!(@arguments) rescue return false
+    true
+  end
+
+  # True if required arguments were provided
+  def arguments_valid?
+    true if @options.author.length >= 1 or @options.key.length >= 1 or
+      @options.conf.length >= 1 or @options.input != nil
+  end
+
+  def output_help
+    output_version
+    RDoc::usage()
+  end
+  
+  def output_usage
+    RDoc::usage('usage')
+  end
+  
+  def output_version
+    puts "#{File.basename(__FILE__)} v#{VERSION}"
+  end
+  
+  def process_args
+    bibentries = []
+    if @options.author.length >= 1
+      @options.author.each do |a|
+        authors = get_authors(a)
+
+        # we have multiple authors, select one.
+        if authors.length > 1
+          select_author(authors)
+        else
+          keys = get_keys(authors[0])
+          keys.each {|key| bibentries += get_bibtex(key)}
+        end
+      end
+    elsif @options.key.length >= 1
+      @options.key.each do |k|
+        puts "% Downloading bibTex for ID #{k}." if @options.verbose
+        bibentries += get_bibtex(k)
+      end
+    elsif @options.conf.length >= 1
+      @options.conf.each do |c|
+        puts "% Downloading bibTex for conference #{c}." if @options.verbose
+        bibentries += get_conf(c)
+      end
+    elsif @options.input
+      entries = File.open(@options.input, "r") { |f| f.read }
+      entries.each do |entry|
+        next if entry =~ /^#.*$/
+        if entry =~ /^\s*author=(.+)$/
+          authors = get_authors($1)
+          if authors.length <= 1
+            keys = get_keys(authors[0])
+            keys.each {|key| bibentries += get_bibtex(key)}
+          else
+            puts "% Ignoring ambiguous author #{$1}"
+          end
+        elsif entry =~ /^\s*key=(.+)$/
+          puts "% Downloading bibTex for ID #{$1}." if @options.verbose
+          bibentries += get_bibtex($1)
+        elsif entry =~ /^\s*conf=(.+)$/
+          puts "% Downloading bibTex for conf #{$1}." if @options.verbose
+          bibentries += get_conf($1)
+        else
+          puts "% Ignoring invalid entry #{$1}"
+        end
+      end
+    else
+      output_usage
+    end
+    print_entries(bibentries)
+  end
+
+  def get_authors(authors)
+    url = DBLP_SERVER + "search/author?xauthor="
+    url += URI.escape(authors)
+    content = Net::HTTP.get_response(URI.parse(url))
+    case content
+    when Net::HTTPSuccess
+      doc = REXML::Document.new(content.body)
+      authors = []
+      doc.elements.each('authors/author') do |e|
+        authors << e.attributes['urlpt']
+      end
+      return authors
+    else
+      content.error!
+    end
+  end
+
+  def select_author(authors)
+    puts "Did you mean?"
+    print authors.join("\n")
+  end
+
+  def get_keys(author)
+    puts "% Downloading citations for author #{author}." if @options.verbose
+    url = DBLP_AUTHORS + author + "/xk"
+    puts "% URL: #{url}" if @options.verbose
+
+    content = Net::HTTP.get_response(URI.parse(url))
+    case content
+    when Net::HTTPSuccess
+      doc = REXML::Document.new(content.body)
+      dblpkeys = []
+      doc.elements.each('dblpperson/dblpkey') do |e|
+        dblpkeys << e.text
+      end
+      return dblpkeys
+    else
+      content.error!
+    end
+  end
+
+  def get_bibtex(key)
+    entries = []
+    key = $1 if key =~ /^\w*:(.+)$/
+
+    content = Net::HTTP.get_response(URI.parse("#{DBLP_BIBTEX}#{key}"))
+    case content
+    when Net::HTTPSuccess
+      entry = $1 if content.body =~ /<pre>(.*)<\/pre>/m
+      if entry
+        # get rid of the html tags
+        entry = entry.gsub(/<(\w+)[^>]*>/m, '')
+        entries << entry.gsub(/<\/\w+>/m, '')
+      else
+        puts "% No entry found for ID #{key}." if @options.verbose
+      end
+      return entries
+    else
+      content.error!
+    end
+  end
+
+  def get_conf(conf)
+    entries = []
+    url = DBLP_CONF + conf.downcase
+    puts "% URL: #{url}/index.html" if @options.verbose
+
+    content = Net::HTTP.get_response(URI.parse(url + "/index.html"))
+    case content
+    when Net::HTTPSuccess
+      links = []
+      content.body.each_line do |line|
+        entry = $1 if line =~ /^.*<a href="([^\/]+\.html)">Contents<\/a>.*$/
+        links << entry if entry
+      end
+    else
+      content.error!
+    end
+
+    bentries = []
+    links.each do |link|
+      puts "% Found: #{link}" if @options.verbose
+      data = Net::HTTP.get_response(URI.parse(url + "/" + link))
+      case data
+      when Net::HTTPSuccess
+        data.body.each_line do |line|
+          entry = $1 if line =~ /^.*<a href="#{DBLP_BIBTEX}([^>]+)\.xml">.*$/
+          bentries << entry if entry
+        end
+      else
+        data.error!
+      end
+    end
+    bentries.each do |b|
+      puts "% Downloading bibTex for ID #{b}." if @options.verbose
+      entries += get_bibtex(b)
+    end
+    return entries
+  end
+
+  def print_entries(entries)
+    entry_keys = []
+    if File.exists?(".ignore")
+      ignore_entries = File.open(".ignore", "r") { |f| f.read }
+      entries.each do |entry|
+        key = $1 if entry.first =~ /^@\w+\{(.+),$/
+        next if entry_keys.include?(key)
+        entry_keys << key
+        entry.each do |e|
+           ignore = false
+          ignore_entries.each {|ie| ignore = true if e =~ /^\s*#{ie.chomp}\s*=/ }
+          print e if not ignore
+        end
+      end
+    else
+      print entries
+    end
+  end
+end
+
+app = App.new(ARGV, STDIN)
+app.run
