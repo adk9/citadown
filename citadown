@@ -24,8 +24,9 @@
 #   -h, --help          Display this help message
 #   -V, --version       Display the version
 #   -v, --verbose       Verbose output
-#   -a, --author        Name(s) of author
-#   -k, --key           DBLP key for the bibTex entry
+#   -a, --author NAME   Name of the author
+#   -k, --key ID        DBLP ID for the bibTex entry
+#   -i, --input FILE    File to read the entries from 
 #
 # == Author
 #   Abhishek Kulkarni
@@ -64,6 +65,7 @@ class App
   DBLP_DB = DBLP_SERVER + "db/indices/a-tree/"
   DBLP_AUTHORS = DBLP_SERVER + "rec/pers/"
   DBLP_BIBTEX = DBLP_SERVER + "rec/bibtex/"
+
   attr_reader :options
   attr_accessor :authors
 
@@ -75,6 +77,7 @@ class App
     @options.verbose = false
     @options.author = []
     @options.key = []
+    @options.input = nil
   end
 
   def run
@@ -94,6 +97,7 @@ class App
     opts.on('-v', '--verbose')       { @options.verbose = true }
     opts.on('-a', '--author NAME')   { |a| @options.author << a }
     opts.on('-k', '--key ID')        { |k| @options.key << k }
+    opts.on('-i', '--input FILE')    { |i| @options.input = f }
 
     opts.parse!(@arguments) rescue return false
     true
@@ -101,7 +105,10 @@ class App
 
   # True if required arguments were provided
   def arguments_valid?
-    true if @options.author.length >= 1 or @options.key.length >= 1
+    valid = false
+    valid = true if @options.author.length >= 1 or @options.key.length >= 1
+    valid = valid or not @options.input
+    return valid
   end
 
   def output_help
@@ -135,6 +142,23 @@ class App
         puts "% Downloading bibTex for ID #{k}." if @options.verbose
         print_entries(get_bibtex(k))
       end
+    elsif not @options.input
+      entries = File.open(".ignore", "r") { |f| f.read }
+      entries.each do |entry|
+        if entry =~ /^\s*author=(.+)$/
+          authors = get_authors($1)
+          if authors.length <= 1
+            keys = get_keys(authors[0])
+            keys.each {|key| print_entries(get_bibtex(key))}
+          else
+            puts "% Ignoring ambiguous author #{$1}"
+          end
+        elsif entry =~ /^\s*key=(.+)$/
+          puts "% Downloading bibTex for ID #{$1}." if @options.verbose
+          print_entries(get_bibtex($1))
+        else
+          puts "% Ignoring invalid entry #{$1}"
+        end
     else
       output_usage
     end
