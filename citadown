@@ -37,6 +37,7 @@
 #   -k, --key ID        DBLP ID for the bibTex entry (eg. conf/padl/LiT10)
 #   -c, --conf NAME     Name of the conference (eg. POPL)
 #   -i, --input FILE    File to read the entries from
+#   -C, --check         Sanity check for the input
 #
 # == Author
 #   Abhishek Kulkarni
