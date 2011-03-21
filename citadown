@@ -87,6 +87,7 @@ class App
     
     @options = OpenStruct.new
     @options.verbose = false
+    @options.check = false
     @options.author = []
     @options.key = []
     @options.conf = []
@@ -112,6 +113,7 @@ class App
     opts.on('-k', '--key ID')        { |k| @options.key << k }
     opts.on('-c', '--conf NAME')     { |c| @options.conf << c }
     opts.on('-i', '--input FILE')    { |f| @options.input = f }
+    opts.on('-C', '--check')         { |c| @options.check = true }
 
     opts.parse!(@arguments) rescue return false
     true
@@ -135,33 +137,63 @@ class App
   def output_version
     puts "#{File.basename(__FILE__)} v#{VERSION}"
   end
-  
+
+  def check_author(author)
+    authors = get_authors(author)
+    if authors.length < 1
+      puts "% Author #{author}\t\t\t\t.. NOT FOUND"
+    elsif authors.length > 1
+      puts "% Author #{author}\t\t\t\t.. AMBIGUOUS"
+      puts "%%% multiple matches: (#{authors.join(', ')})\n"
+    else
+      puts "% Author #{author} (#{authors[0]})\t\t\t.. OK"
+    end
+    return authors
+  end
+
+  def check_key(key)
+    bibentries = get_bibtex(key)
+    if bibentries.length > 0
+      puts "% bibTex entry #{key}\t\t\t\t.. OK"
+    else
+      puts "% bibTex entry #{key}\t\t\t\t.. NOT FOUND"
+    end
+    return bibentries
+  end
+
+  def check_conf(conf)
+    bibentries = get_conf(conf)
+    if bibentries.length > 0
+      puts "% Conference name #{conf}\t\t\t\t.. OK"
+    else
+      puts "% Conference name #{conf}\t\t\t\t.. NOT FOUND"
+    end
+    return bibentries
+  end
+
   def process_args
     bibentries = []
     if @options.author.length >= 1
       @options.author.each do |a|
-        authors = get_authors(a)
-        if authors.length == 0
-          puts "% Unknown author #{a}."
-          return
-        elsif authors.length > 1
-          # we have multiple authors, select one.
-          select_author(authors)
-          return
-        else
-          keys = get_keys(authors[0])
-          keys.each {|key| bibentries += get_bibtex(key)} if keys
-        end
+        authors = check_author(a)
+        return if @options.check or authors.length != 1
+        keys = get_keys(authors[0])
+        bar = ProgressBar.new("#{keys.length} papers", keys.length)
+        keys.each {|key| 
+          bibentries += get_bibtex(key)
+          bar.inc
+        }
+        bar.finish
       end
     elsif @options.key.length >= 1
       @options.key.each do |k|
-        puts "% Downloading bibTex for ID #{k}." if @options.verbose
-        bibentries += get_bibtex(k)
+        bibentries += check_key(k)
+        return if @options.check or bibentries.length == 0
       end
     elsif @options.conf.length >= 1
       @options.conf.each do |c|
-        puts "% Downloading bibTex for conference #{c}." if @options.verbose
-        bibentries += get_conf(c)
+        bibentries += check_conf(c)
+        return if @options.check or bibentries.length == 0
       end
     elsif @options.input
       entries = File.open(@options.input, "r") { |f| f.read }
@@ -169,24 +201,20 @@ class App
         next if entry =~ /^#.*$/
         next if entry =~ /^$/
         if entry =~ /^\s*author=(.+)$/
-          authors = get_authors($1)
-          if authors.length == 1
-            keys = get_keys(authors[0])
-            bar = ProgressBar.new("#{keys.length} papers", keys.length)
-            keys.each {|key| 
-              bibentries += get_bibtex(key)
-              bar.inc
-            }
-            bar.finish
-          else
-            puts "% Unknown author #{$1}"
-          end
+          authors = check_author($1)
+          next if @options.check or authors.length != 1
+
+          keys = get_keys(authors[0])
+          bar = ProgressBar.new("#{keys.length} papers", keys.length)
+          keys.each {|key| 
+            bibentries += get_bibtex(key)
+            bar.inc
+          }
+          bar.finish
         elsif entry =~ /^\s*key=(.+)$/
-          puts "% Downloading bibTex for ID #{$1}." if @options.verbose
-          bibentries += get_bibtex($1)
+          bibentries += check_key($1)
         elsif entry =~ /^\s*conf=(.+)$/
-          puts "% Downloading bibTex for conf #{$1}." if @options.verbose
-          bibentries += get_conf($1)
+          bibentries += check_conf($1)
         else
           puts "% Ignoring invalid entry #{$1}"
         end
@@ -194,7 +222,7 @@ class App
     else
       output_usage
     end
-    print_entries(bibentries)
+    print_entries(bibentries) if bibentries.length > 0 and not @options.check
   end
 
   def get_authors(author)
@@ -218,11 +246,6 @@ class App
     return authors
   end
 
-  def select_author(authors)
-    puts "Did you mean?"
-    print authors.join("\n")
-  end
-
   def get_keys(author)
     return nil if not author
     puts "% Downloading citations for author #{author}." if @options.verbose
@@ -237,17 +260,16 @@ class App
       doc.elements.each('dblpperson/dblpkey') do |e|
         dblpkeys << e.text
       end
-      return dblpkeys
-    else
-      content.error!
     end
+    return dblpkeys
   end
 
   def get_bibtex(key)
     entries = []
     key = $1 if key =~ /^\w*:(.+)$/
 
-    content = Net::HTTP.get_response(URI.parse("#{DBLP_BIBTEX}#{key}"))
+    url = URI.escape(DBLP_BIBTEX + key)
+    content = Net::HTTP.get_response(URI.parse(url))
     case content
     when Net::HTTPSuccess
       entry = $1 if content.body =~ /<pre>(.*)<\/pre>/m
@@ -273,13 +295,17 @@ class App
     content = Net::HTTP.get_response(URI.parse(url + "/index.html"))
     case content
     when Net::HTTPSuccess
+      if @options.check
+        entries << true
+        return entries
+      end
       links = []
       content.body.each_line do |line|
         entry = $1 if line =~ /^.*<a href="([^\/]+\.html)">Contents<\/a>.*$/
         links << entry if entry
       end
     else
-      content.error!
+      return entries
     end
 
     bentries = []
@@ -292,13 +318,14 @@ class App
           entry = $1 if line =~ /^.*<a href="#{DBLP_BIBTEX}([^>]+)\.xml">.*$/
           bentries << entry if entry
         end
-      else
-        data.error!
       end
     end
-    bentries.each do |b|
-      puts "% Downloading bibTex for ID #{b}." if @options.verbose
-      entries += get_bibtex(b)
+
+    if bentries
+      bentries.each do |b|
+        puts "% Downloading bibTex for ID #{b}." if @options.verbose
+        entries += get_bibtex(b)
+      end
     end
     return entries
   end
