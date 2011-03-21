@@ -196,21 +196,25 @@ class App
     print_entries(bibentries)
   end
 
-  def get_authors(authors)
-    url = DBLP_SERVER + "search/author?xauthor="
-    url += URI.escape(authors)
-    content = Net::HTTP.get_response(URI.parse(url))
-    case content
-    when Net::HTTPSuccess
-      doc = REXML::Document.new(content.body)
-      authors = []
-      doc.elements.each('authors/author') do |e|
-        authors << e.attributes['urlpt']
-      end
-      return authors
+  def get_authors(author)
+    authors = []
+    if author =~ /\w\/.*:.*$/
+      authors << author
     else
-      content.error!
+      url = DBLP_SERVER + "search/author?xauthor="
+      url += URI.escape(author)
+      content = Net::HTTP.get_response(URI.parse(url))
+      case content
+      when Net::HTTPSuccess
+        doc = REXML::Document.new(content.body)
+        doc.elements.each('authors/author') do |e|
+          authors << e.attributes['urlpt']
+        end
+      else
+        content.error!
+      end
     end
+    return authors
   end
 
   def select_author(authors)
