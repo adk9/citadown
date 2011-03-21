@@ -24,6 +24,8 @@
 #   -h, --help          Display this help message
 #   -V, --version       Display the version
 #   -v, --verbose       Verbose output
+#   -a, --author        Name(s) of author
+#   -k, --key           DBLP key for the bibTex entry
 #
 # == Author
 #   Abhishek Kulkarni
@@ -71,6 +73,8 @@ class App
     
     @options = OpenStruct.new
     @options.verbose = false
+    @options.author = []
+    @options.key = []
   end
 
   def run
@@ -84,10 +88,12 @@ class App
   protected
   def parsed_options?    
     # Specify options
-    opts = OptionParser.new 
-    opts.on('-V', '--version')    { output_version ; exit 0 }
-    opts.on('-h', '--help')       { output_help }
-    opts.on('-v', '--verbose')    { @options.verbose = true }
+    opts = OptionParser.new
+    opts.on('-V', '--version')       { output_version ; exit 0 }
+    opts.on('-h', '--help')          { output_help }
+    opts.on('-v', '--verbose')       { @options.verbose = true }
+    opts.on('-a', '--author NAME')   { |a| @options.author << a }
+    opts.on('-k', '--key ID')        { |k| @options.key << k }
 
     opts.parse!(@arguments) rescue return false
     true
@@ -95,7 +101,7 @@ class App
 
   # True if required arguments were provided
   def arguments_valid?
-    true if @arguments.length >= 1
+    true if @options.author.length >= 1 or @options.key.length >= 1
   end
 
   def output_help
@@ -112,22 +118,40 @@ class App
   end
   
   def process_args
-    url = DBLP_SERVER + "search/author/"
-    url += URI.escape(@arguments.join(" "))
+    if @options.author.length >= 1
+      @options.author.each do |a|
+        authors = get_authors(a)
 
+        # we have multiple authors, select one.
+        if authors.length > 1
+          select_author(authors)
+        else
+          keys = get_keys(authors[0])
+          keys.each {|key| print_entries(get_bibtex(key))}
+        end
+      end
+    elsif @options.key.length >= 1
+      @options.key.each do |k|
+        puts "% Downloading bibTex for ID #{k}." if @options.verbose
+        print_entries(get_bibtex(k))
+      end
+    else
+      output_usage
+    end
+  end
+
+  def get_authors(authors)
+    url = DBLP_SERVER + "search/author?xauthor="
+    url += URI.escape(authors)
     content = Net::HTTP.get_response(URI.parse(url))
     case content
     when Net::HTTPSuccess
+      doc = REXML::Document.new(content.body)
       authors = []
-      result = content.body
-      result.each_line do |line|
-        authors << $1 if line =~ /<li><a[^>]*>(.*?)<\/a><\/li>/
+      doc.elements.each('authors/author') do |e|
+        authors << e.attributes['urlpt']
       end
-      select_author(authors)
-    when Net::HTTPRedirection
-      author = $1 if content['location'] =~ /^#{DBLP_DB}(.+)\.html$/
-      keys = get_keys(author)
-      keys.each {|key| print get_bibtex(key)}
+      return authors
     else
       content.error!
     end
@@ -143,22 +167,39 @@ class App
     url = DBLP_AUTHORS + author + "/xk"
     puts "% URL: #{url}" if @options.verbose
 
-    publications = Net::HTTP.get_response(URI.parse(url)).body
-
-    doc = REXML::Document.new(publications)
-    dblpkeys = []
-    doc.elements.each('dblpperson/dblpkey') do |e|
-      dblpkeys << e.text
+    content = Net::HTTP.get_response(URI.parse(url))
+    case content
+    when Net::HTTPSuccess
+      doc = REXML::Document.new(content.body)
+      dblpkeys = []
+      doc.elements.each('dblpperson/dblpkey') do |e|
+        dblpkeys << e.text
+      end
+      return dblpkeys
+    else
+      content.error!
     end
-    return dblpkeys
   end
 
   def get_bibtex(key)
     bibentries = []
-    data = Net::HTTP.get_response(URI.parse("#{DBLP_BIBTEX}#{key}")).body
-    entry = $1 if data =~ /<pre>(.*)<\/pre>/m
-    bibentries << entry.gsub(/<(\w+)[^>]*>/m, '').gsub(/<\/\w+>/m, '')
-    return bibentries
+    key = $1 if key =~ /^\w*:(.+)$/
+
+    content = Net::HTTP.get_response(URI.parse("#{DBLP_BIBTEX}#{key}"))
+    case content
+    when Net::HTTPSuccess
+      entry = $1 if content.body =~ /<pre>(.*)<\/pre>/m
+      if entry
+        # get rid of the html tags
+        entry = entry.gsub(/<(\w+)[^>]*>/m, '')
+        bibentries << entry.gsub(/<\/\w+>/m, '')
+      else
+        puts "% No entry found for ID #{key}." if @options.verbose
+      end
+      return bibentries
+    else
+      content.error!
+    end
   end
 
   def print_entries(entries)
@@ -167,9 +208,7 @@ class App
       entries.each do |entry|
         entry.each_line do |e|
           ignore = false
-          ignore_entries.each do |ie|
-            ignore = true if e =~ /^\s*#{ie.chomp}\s*=/
-          end
+          ignore_entries.each {|ie| ignore = true if e =~ /^\s*#{ie.chomp}\s*=/ }
           print e if not ignore
         end
       end
