@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE html 
+     PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html>
+<head>
+  <title>process_args (Citadown)</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+  <link rel="stylesheet" href="../.././rdoc-style.css" type="text/css" media="screen" />
+</head>
+<body class="standalone-code">
+  <pre><span class="ruby-comment cmt"># File citadown, line 185</span>
+  <span class="ruby-keyword kw">def</span> <span class="ruby-identifier">process_args</span>
+    <span class="ruby-identifier">bibentries</span> = []
+    <span class="ruby-keyword kw">if</span> <span class="ruby-ivar">@options</span>.<span class="ruby-identifier">author</span>.<span class="ruby-identifier">length</span> <span class="ruby-operator">&gt;=</span> <span class="ruby-value">1</span>
+      <span class="ruby-ivar">@options</span>.<span class="ruby-identifier">author</span>.<span class="ruby-identifier">each</span> <span class="ruby-keyword kw">do</span> <span class="ruby-operator">|</span><span class="ruby-identifier">a</span><span class="ruby-operator">|</span>
+        <span class="ruby-identifier">authors</span> = <span class="ruby-identifier">check_author</span>(<span class="ruby-identifier">a</span>)
+        <span class="ruby-keyword kw">return</span> <span class="ruby-keyword kw">if</span> <span class="ruby-ivar">@options</span>.<span class="ruby-identifier">check</span> <span class="ruby-keyword kw">or</span> <span class="ruby-identifier">authors</span>.<span class="ruby-identifier">length</span> <span class="ruby-operator">!=</span> <span class="ruby-value">1</span>
+        <span class="ruby-identifier">keys</span> = <span class="ruby-identifier">get_keys</span>(<span class="ruby-identifier">authors</span>[<span class="ruby-value">0</span>])
+        <span class="ruby-identifier">bar</span> = <span class="ruby-constant">ProgressBar</span>.<span class="ruby-identifier">new</span>(<span class="ruby-node">&quot;#{keys.length} papers&quot;</span>, <span class="ruby-identifier">keys</span>.<span class="ruby-identifier">length</span>)
+        <span class="ruby-identifier">keys</span>.<span class="ruby-identifier">each</span> {<span class="ruby-operator">|</span><span class="ruby-identifier">key</span><span class="ruby-operator">|</span> 
+          <span class="ruby-identifier">bibentries</span> <span class="ruby-operator">+=</span> <span class="ruby-identifier">get_bibtex</span>(<span class="ruby-identifier">key</span>)
+          <span class="ruby-identifier">bar</span>.<span class="ruby-identifier">inc</span>
+        }
+        <span class="ruby-identifier">bar</span>.<span class="ruby-identifier">finish</span>
+      <span class="ruby-keyword kw">end</span>
+    <span class="ruby-keyword kw">elsif</span> <span class="ruby-ivar">@options</span>.<span class="ruby-identifier">key</span>.<span class="ruby-identifier">length</span> <span class="ruby-operator">&gt;=</span> <span class="ruby-value">1</span>
+      <span class="ruby-ivar">@options</span>.<span class="ruby-identifier">key</span>.<span class="ruby-identifier">each</span> <span class="ruby-keyword kw">do</span> <span class="ruby-operator">|</span><span class="ruby-identifier">k</span><span class="ruby-operator">|</span>
+        <span class="ruby-identifier">bibentries</span> <span class="ruby-operator">+=</span> <span class="ruby-identifier">check_key</span>(<span class="ruby-identifier">k</span>)
+        <span class="ruby-keyword kw">return</span> <span class="ruby-keyword kw">if</span> <span class="ruby-ivar">@options</span>.<span class="ruby-identifier">check</span> <span class="ruby-keyword kw">or</span> <span class="ruby-identifier">bibentries</span>.<span class="ruby-identifier">length</span> <span class="ruby-operator">==</span> <span class="ruby-value">0</span>
+      <span class="ruby-keyword kw">end</span>
+    <span class="ruby-keyword kw">elsif</span> <span class="ruby-ivar">@options</span>.<span class="ruby-identifier">conf</span>.<span class="ruby-identifier">length</span> <span class="ruby-operator">&gt;=</span> <span class="ruby-value">1</span>
+      <span class="ruby-ivar">@options</span>.<span class="ruby-identifier">conf</span>.<span class="ruby-identifier">each</span> <span class="ruby-keyword kw">do</span> <span class="ruby-operator">|</span><span class="ruby-identifier">c</span><span class="ruby-operator">|</span>
+        <span class="ruby-identifier">bibentries</span> <span class="ruby-operator">+=</span> <span class="ruby-identifier">check_conf</span>(<span class="ruby-identifier">c</span>)
+        <span class="ruby-keyword kw">return</span> <span class="ruby-keyword kw">if</span> <span class="ruby-ivar">@options</span>.<span class="ruby-identifier">check</span> <span class="ruby-keyword kw">or</span> <span class="ruby-identifier">bibentries</span>.<span class="ruby-identifier">length</span> <span class="ruby-operator">==</span> <span class="ruby-value">0</span>
+      <span class="ruby-keyword kw">end</span>
+    <span class="ruby-keyword kw">elsif</span> <span class="ruby-ivar">@options</span>.<span class="ruby-identifier">input</span>
+      <span class="ruby-keyword kw">if</span> <span class="ruby-keyword kw">not</span> <span class="ruby-constant">File</span>.<span class="ruby-identifier">exists?</span>(<span class="ruby-ivar">@options</span>.<span class="ruby-identifier">input</span>)
+        <span class="ruby-identifier">puts</span> <span class="ruby-node">&quot;% Invalid input file #{@options.input}&quot;</span>
+        <span class="ruby-identifier">output_usage</span>
+      <span class="ruby-keyword kw">end</span>
+      <span class="ruby-identifier">entries</span> = <span class="ruby-constant">File</span>.<span class="ruby-identifier">open</span>(<span class="ruby-ivar">@options</span>.<span class="ruby-identifier">input</span>, <span class="ruby-value str">&quot;r&quot;</span>) { <span class="ruby-operator">|</span><span class="ruby-identifier">f</span><span class="ruby-operator">|</span> <span class="ruby-identifier">f</span>.<span class="ruby-identifier">read</span> }
+      <span class="ruby-identifier">entries</span>.<span class="ruby-identifier">each</span> <span class="ruby-keyword kw">do</span> <span class="ruby-operator">|</span><span class="ruby-identifier">entry</span><span class="ruby-operator">|</span>
+        <span class="ruby-keyword kw">next</span> <span class="ruby-keyword kw">if</span> <span class="ruby-identifier">entry</span> <span class="ruby-operator">=~</span> <span class="ruby-regexp re">/^#.*$/</span>
+        <span class="ruby-keyword kw">next</span> <span class="ruby-keyword kw">if</span> <span class="ruby-identifier">entry</span> <span class="ruby-operator">=~</span> <span class="ruby-regexp re">/^$/</span>
+        <span class="ruby-keyword kw">if</span> <span class="ruby-identifier">entry</span> <span class="ruby-operator">=~</span> <span class="ruby-regexp re">/^\s*author=(.+)$/</span>
+          <span class="ruby-identifier">authors</span> = <span class="ruby-identifier">check_author</span>(<span class="ruby-identifier">$1</span>)
+          <span class="ruby-keyword kw">next</span> <span class="ruby-keyword kw">if</span> <span class="ruby-ivar">@options</span>.<span class="ruby-identifier">check</span> <span class="ruby-keyword kw">or</span> <span class="ruby-identifier">authors</span>.<span class="ruby-identifier">length</span> <span class="ruby-operator">!=</span> <span class="ruby-value">1</span>
+
+          <span class="ruby-identifier">keys</span> = <span class="ruby-identifier">get_keys</span>(<span class="ruby-identifier">authors</span>[<span class="ruby-value">0</span>])
+          <span class="ruby-identifier">bar</span> = <span class="ruby-constant">ProgressBar</span>.<span class="ruby-identifier">new</span>(<span class="ruby-node">&quot;#{keys.length} papers&quot;</span>, <span class="ruby-identifier">keys</span>.<span class="ruby-identifier">length</span>)
+          <span class="ruby-identifier">keys</span>.<span class="ruby-identifier">each</span> {<span class="ruby-operator">|</span><span class="ruby-identifier">key</span><span class="ruby-operator">|</span> 
+            <span class="ruby-identifier">bibentries</span> <span class="ruby-operator">+=</span> <span class="ruby-identifier">get_bibtex</span>(<span class="ruby-identifier">key</span>)
+            <span class="ruby-identifier">bar</span>.<span class="ruby-identifier">inc</span>
+          }
+          <span class="ruby-identifier">bar</span>.<span class="ruby-identifier">finish</span>
+        <span class="ruby-keyword kw">elsif</span> <span class="ruby-identifier">entry</span> <span class="ruby-operator">=~</span> <span class="ruby-regexp re">/^\s*key=(.+)$/</span>
+          <span class="ruby-identifier">bibentries</span> <span class="ruby-operator">+=</span> <span class="ruby-identifier">check_key</span>(<span class="ruby-identifier">$1</span>)
+        <span class="ruby-keyword kw">elsif</span> <span class="ruby-identifier">entry</span> <span class="ruby-operator">=~</span> <span class="ruby-regexp re">/^\s*conf=(.+)$/</span>
+          <span class="ruby-identifier">bibentries</span> <span class="ruby-operator">+=</span> <span class="ruby-identifier">check_conf</span>(<span class="ruby-identifier">$1</span>)
+        <span class="ruby-keyword kw">else</span>
+          <span class="ruby-identifier">puts</span> <span class="ruby-node">&quot;% Ignoring invalid entry #{$1}&quot;</span>
+        <span class="ruby-keyword kw">end</span>
+      <span class="ruby-keyword kw">end</span>
+    <span class="ruby-keyword kw">else</span>
+      <span class="ruby-identifier">output_usage</span>
+    <span class="ruby-keyword kw">end</span>
+    <span class="ruby-identifier">print_entries</span>(<span class="ruby-identifier">bibentries</span>) <span class="ruby-keyword kw">if</span> <span class="ruby-identifier">bibentries</span>.<span class="ruby-identifier">length</span> <span class="ruby-operator">&gt;</span> <span class="ruby-value">0</span> <span class="ruby-keyword kw">and</span> <span class="ruby-keyword kw">not</span> <span class="ruby-ivar">@options</span>.<span class="ruby-identifier">check</span>
+  <span class="ruby-keyword kw">end</span></pre>
+</body>
+</html>
