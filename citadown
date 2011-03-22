@@ -262,6 +262,9 @@ class Citadown
           bibentries += check_key($1)
         elsif entry =~ /^\s*conf=(.+)$/
           bibentries += check_conf($1)
+        elsif entry =~ /^\s*citation=(.+)$/
+          keys = check_citation($1)
+          keys.each {|key| bibentries += get_bibtex(key)} if keys
         else
           puts "% Ignoring invalid entry #{$1}"
         end
@@ -325,9 +328,7 @@ class Citadown
     case content
     when Net::HTTPSuccess
       chunk = $1 if content.body =~ /<tr><th><\/th><th colspan="2" bgcolor="#FFFFCC">#{year}<\/th><\/tr>(.+?)<\/th><\/tr>.+/m
-      chunk.each do |line|
-        dblpkeys << $1 if line =~ /^.*<a href="#{DBLP_BIBTEX}([^>]+)\.xml">.*$/
-      end
+      chunk.each {|line| dblpkeys << $1 if line =~ /^.*<a href="#{DBLP_BIBTEX}([^>]+)\.xml">.*$/ } if chunk
     end
     return dblpkeys
   end
