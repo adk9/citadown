@@ -194,11 +194,14 @@ class Citadown
       if authors.length < 1
         puts "% Citation key (#{author}, #{year})\t\t\t.. NOT FOUND"
       else
-        keys = get_keys_by_year(authors[0], year)
-        if keys.length > 0
-          puts "% Citation key (#{author}, #{year})\t\t\t.. OK"
-        else
-          puts "% Citation key (#{author}, #{year})\t\t\t.. NOT FOUND"
+        authors.each do |author|
+          k = get_keys_by_year(author, year)
+          if k.length > 0
+            puts "% Citation key (#{author}, #{year})\t\t\t.. OK"
+            keys += k
+          else
+            puts "% Citation key (#{author}, #{year})\t\t\t.. NOT FOUND"
+          end
         end
       end
     else
