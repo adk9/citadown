@@ -30,15 +30,16 @@
 #   citadown [options]
 #
 #   Options:
-#   -h, --help          Display this help message
-#   -V, --version       Display the version
-#   -v, --verbose       Verbose output
-#   -a, --author NAME   Name of the author (eg. filinski)
-#   -k, --key ID        DBLP ID for the bibTex entry (eg. conf/padl/LiT10)
-#   -c, --conf NAME     Name of the conference (eg. POPL)
-#   -i, --input FILE    File to read the entries from (default input.cit)
-#   -o, --output FILE   File to write the bib output to (default dblp.bib)
-#   -C, --check         Sanity check for the input
+#   -h, --help          	Display this help message
+#   -V, --version       	Display the version
+#   -v, --verbose       	Verbose output
+#   -a, --author NAME   	Name of the author (eg. filinski)
+#   -k, --key ID        	DBLP ID for the bibTex entry (eg. conf/padl/LiT10)
+#   -c, --conf NAME     	Name of the conference (eg. POPL)
+#   -t, --citation (NAME, YEAR) Citation including the author and year (eg. (moggi, 1991))
+#   -i, --input FILE    	File to read the entries from (default input.cit)
+#   -o, --output FILE   	File to write the bib output to (default dblp.bib)
+#   -C, --check         	Sanity check for the input
 #
 # == Author
 #   Abhishek Kulkarni
@@ -93,6 +94,7 @@ class Citadown
     @options.author = []
     @options.key = []
     @options.conf = []
+    @options.citation = []
     @options.input = "input.cit"
     @options.output = "dblp.bib"
   end
@@ -117,6 +119,7 @@ class Citadown
     opts.on('-c', '--conf NAME')     { |c| @options.conf << c }
     opts.on('-i', '--input FILE')    { |f| @options.input = f }
     opts.on('-o', '--output FILE')   { |f| @options.output = f }
+    opts.on('-t', '--citation (NAME, YEAR)') { |t| @options.citation << t }
     opts.on('-C', '--check')         { |c| @options.check = true }
 
     opts.parse!(@arguments) rescue return false
@@ -181,6 +184,29 @@ class Citadown
     return bibentries
   end
 
+  # Method to check the status of given citation key
+  def check_citation(citation)
+    keys = []
+    if citation =~ /^\((\w+), (\d+)\)$/
+      author = $1
+      year = $2
+      authors = get_authors(author)
+      if authors.length < 1
+        puts "% Citation key (#{author}, #{year})\t\t\t.. NOT FOUND"
+      else
+        keys = get_keys_by_year(authors[0], year)
+        if keys.length > 0
+          puts "% Citation key (#{author}, #{year})\t\t\t.. OK"
+        else
+          puts "% Citation key (#{author}, #{year})\t\t\t.. NOT FOUND"
+        end
+      end
+    else
+      puts "% Citation key (#{author}, #{year})\t\t\t.. INVALID"
+    end
+    return keys
+  end
+
   # Process input arguments
   def process_args
     bibentries = []
@@ -205,6 +231,12 @@ class Citadown
       @options.conf.each do |c|
         bibentries += check_conf(c)
         return if @options.check or bibentries.length == 0
+      end
+    elsif @options.citation.length >= 1
+      @options.citation.each do |c|
+        keys = check_citation(c)
+        return if @options.check or keys.length == 0
+        keys.each {|key| bibentries += get_bibtex(key)}
       end
     elsif @options.input
       if not File.exists?(@options.input)
@@ -269,13 +301,32 @@ class Citadown
     url = DBLP_AUTHORS + author + "/xk"
     puts "% URL: #{url}" if @options.verbose
 
+    dblpkeys = []
     content = Net::HTTP.get_response(URI.parse(url))
     case content
     when Net::HTTPSuccess
       doc = REXML::Document.new(content.body)
-      dblpkeys = []
       doc.elements.each('dblpperson/dblpkey') do |e|
         dblpkeys << e.text
+      end
+    end
+    return dblpkeys
+  end
+
+  # Fetch all the DBLP keys for a given author from a specified year
+  def get_keys_by_year(author, year)
+    return nil if not author or not year
+    puts "% Downloading citations (#{author}, #{year})." if @options.verbose
+    url = DBLP_DB + author + ".html"
+    puts "% URL: #{url}" if @options.verbose
+
+    dblpkeys = []
+    content = Net::HTTP.get_response(URI.parse(url))
+    case content
+    when Net::HTTPSuccess
+      chunk = $1 if content.body =~ /<tr><th><\/th><th colspan="2" bgcolor="#FFFFCC">#{year}<\/th><\/tr>(.+?)<\/th><\/tr>.+/m
+      chunk.each do |line|
+        dblpkeys << $1 if line =~ /^.*<a href="#{DBLP_BIBTEX}([^>]+)\.xml">.*$/
       end
     end
     return dblpkeys
