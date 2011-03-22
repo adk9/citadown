@@ -72,7 +72,7 @@ require 'net/http'
 require 'rexml/document'
 require 'progressbar' # sudo gem install progressbar
 
-class App
+class Citadown
   VERSION = '0.2.0'
   DBLP_SERVER = "http://dblp.uni-trier.de/"
   DBLP_DB = DBLP_SERVER + "db/indices/a-tree/"
@@ -129,19 +129,23 @@ class App
       @options.conf.length >= 1 or @options.input != nil
   end
 
+  # Output a detailed help message
   def output_help
     output_version
     RDoc::usage()
   end
   
+  # Output the usage (with options)
   def output_usage
     RDoc::usage('usage')
   end
   
+  # Output the current version
   def output_version
     puts "#{File.basename(__FILE__)} v#{VERSION}"
   end
 
+  # Method to check the status of the given author 
   def check_author(author)
     authors = get_authors(author)
     if authors.length < 1
@@ -155,6 +159,7 @@ class App
     return authors
   end
 
+  # Method to check the status of the given DBLP key
   def check_key(key)
     bibentries = get_bibtex(key)
     if bibentries.length > 0
@@ -165,6 +170,7 @@ class App
     return bibentries
   end
 
+  # Method to check the status of the given conference
   def check_conf(conf)
     bibentries = get_conf(conf)
     if bibentries.length > 0
@@ -175,6 +181,7 @@ class App
     return bibentries
   end
 
+  # Process input arguments
   def process_args
     bibentries = []
     if @options.author.length >= 1
@@ -233,6 +240,7 @@ class App
     print_entries(bibentries) if bibentries.length > 0 and not @options.check
   end
 
+  # Fetch all the authors from the DBLP database
   def get_authors(author)
     authors = []
     if author =~ /\w\/.*:.*$/
@@ -254,6 +262,7 @@ class App
     return authors
   end
 
+  # Fetch all the DBLP keys associated with a given author from the DBLP database 
   def get_keys(author)
     return nil if not author
     puts "% Downloading citations for author #{author}." if @options.verbose
@@ -272,6 +281,7 @@ class App
     return dblpkeys
   end
 
+  # Fetch the bibTex entry associated with a DBLP key
   def get_bibtex(key)
     entries = []
     key = $1 if key =~ /^\w*:(.+)$/
@@ -295,6 +305,7 @@ class App
     end
   end
 
+  # Fetch all the bibTex entries associated with a conference
   def get_conf(conf)
     entries = []
     url = DBLP_CONF + conf.downcase
@@ -338,6 +349,7 @@ class App
     return entries
   end
 
+  # Print the bibTex entries to the output file
   def print_entries(entries)
     entry_keys = []
     dblp = File.new(@options.output, "w")
@@ -364,5 +376,5 @@ class App
   end
 end
 
-app = App.new(ARGV, STDIN)
-app.run
+citadown = Citadown.new(ARGV, STDIN)
+Citadown.run
