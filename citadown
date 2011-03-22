@@ -210,9 +210,17 @@ class Citadown
     return keys
   end
 
+  def interrupted(bibentries)
+    print "\n"
+    print_entries(bibentries) if bibentries.length > 0 and not @options.check
+    exit
+  end
+
   # Process input arguments
   def process_args
     bibentries = []
+    trap("INT") { interrupted(bibentries) }
+
     if @options.author.length >= 1
       @options.author.each do |a|
         authors = check_author(a)
