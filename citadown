@@ -23,7 +23,7 @@
 #    the page numbers (from the journal that the paper appeared in), the
 #    source, the link to the electronic edition etc. citadown allows you
 #    to define a set of tags that you would like to ignore and exclude from
-#    the generated bibTex file. By default, it looks for a file ignore_fields in
+#    the generated bibTex file. By default, it looks for a file ignore.cit in
 #    the CWD for the keywords to ignore.
 #
 # == Usage 
@@ -36,7 +36,8 @@
 #   -a, --author NAME   Name of the author (eg. filinski)
 #   -k, --key ID        DBLP ID for the bibTex entry (eg. conf/padl/LiT10)
 #   -c, --conf NAME     Name of the conference (eg. POPL)
-#   -i, --input FILE    File to read the entries from
+#   -i, --input FILE    File to read the entries from (default input.cit)
+#   -o, --output FILE   File to write the bib output to (default dblp.bib)
 #   -C, --check         Sanity check for the input
 #
 # == Author
@@ -92,7 +93,8 @@ class App
     @options.author = []
     @options.key = []
     @options.conf = []
-    @options.input = nil
+    @options.input = "input.cit"
+    @options.output = "dblp.bib"
   end
 
   def run
@@ -114,6 +116,7 @@ class App
     opts.on('-k', '--key ID')        { |k| @options.key << k }
     opts.on('-c', '--conf NAME')     { |c| @options.conf << c }
     opts.on('-i', '--input FILE')    { |f| @options.input = f }
+    opts.on('-o', '--output FILE')   { |f| @options.output = f }
     opts.on('-C', '--check')         { |c| @options.check = true }
 
     opts.parse!(@arguments) rescue return false
@@ -197,6 +200,10 @@ class App
         return if @options.check or bibentries.length == 0
       end
     elsif @options.input
+      if not File.exists?(@options.input)
+        puts "% Invalid input file #{@options.input}"
+        output_usage
+      end
       entries = File.open(@options.input, "r") { |f| f.read }
       entries.each do |entry|
         next if entry =~ /^#.*$/
@@ -333,9 +340,9 @@ class App
 
   def print_entries(entries)
     entry_keys = []
-    dblp = File.new("dblp.bib", "w")
-    if File.exists?("ignore_fields")
-      ignore_entries = File.open("ignore_fields", "r") { |f| f.read }
+    dblp = File.new(@options.output, "w")
+    if File.exists?("ignore.cit")
+      ignore_entries = File.open("ignore.cit", "r") { |f| f.read }
       entries.each do |entry|
         key = $1 if entry.first =~ /^@\w+\{(.+),$/
         next if entry_keys.include?(key)
@@ -353,7 +360,7 @@ class App
       dblp.print entries
     end
     dblp.close()
-    puts "Wrote dblp.bib"
+    puts "Wrote #{@options.output}"
   end
 end
 
