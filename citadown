@@ -377,4 +377,4 @@ class Citadown
 end
 
 citadown = Citadown.new(ARGV, STDIN)
-Citadown.run
+citadown.run
