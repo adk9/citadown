@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE html 
+     PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html>
+<head>
+  <title>parsed_options? (Citadown)</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+  <link rel="stylesheet" href="../.././rdoc-style.css" type="text/css" media="screen" />
+</head>
+<body class="standalone-code">
+  <pre><span class="ruby-comment cmt"># File citadown, line 109</span>
+  <span class="ruby-keyword kw">def</span> <span class="ruby-identifier">parsed_options?</span>    
+    <span class="ruby-comment cmt"># Specify options</span>
+    <span class="ruby-identifier">opts</span> = <span class="ruby-constant">OptionParser</span>.<span class="ruby-identifier">new</span>
+    <span class="ruby-identifier">opts</span>.<span class="ruby-identifier">on</span>(<span class="ruby-value str">'-V'</span>, <span class="ruby-value str">'--version'</span>)       { <span class="ruby-identifier">output_version</span> ; <span class="ruby-identifier">exit</span> <span class="ruby-value">0</span> }
+    <span class="ruby-identifier">opts</span>.<span class="ruby-identifier">on</span>(<span class="ruby-value str">'-h'</span>, <span class="ruby-value str">'--help'</span>)          { <span class="ruby-identifier">output_help</span> }
+    <span class="ruby-identifier">opts</span>.<span class="ruby-identifier">on</span>(<span class="ruby-value str">'-v'</span>, <span class="ruby-value str">'--verbose'</span>)       { <span class="ruby-ivar">@options</span>.<span class="ruby-identifier">verbose</span> = <span class="ruby-keyword kw">true</span> }
+    <span class="ruby-identifier">opts</span>.<span class="ruby-identifier">on</span>(<span class="ruby-value str">'-a'</span>, <span class="ruby-value str">'--author NAME'</span>)   { <span class="ruby-operator">|</span><span class="ruby-identifier">a</span><span class="ruby-operator">|</span> <span class="ruby-ivar">@options</span>.<span class="ruby-identifier">author</span> <span class="ruby-operator">&lt;&lt;</span> <span class="ruby-identifier">a</span> }
+    <span class="ruby-identifier">opts</span>.<span class="ruby-identifier">on</span>(<span class="ruby-value str">'-k'</span>, <span class="ruby-value str">'--key ID'</span>)        { <span class="ruby-operator">|</span><span class="ruby-identifier">k</span><span class="ruby-operator">|</span> <span class="ruby-ivar">@options</span>.<span class="ruby-identifier">key</span> <span class="ruby-operator">&lt;&lt;</span> <span class="ruby-identifier">k</span> }
+    <span class="ruby-identifier">opts</span>.<span class="ruby-identifier">on</span>(<span class="ruby-value str">'-c'</span>, <span class="ruby-value str">'--conf NAME'</span>)     { <span class="ruby-operator">|</span><span class="ruby-identifier">c</span><span class="ruby-operator">|</span> <span class="ruby-ivar">@options</span>.<span class="ruby-identifier">conf</span> <span class="ruby-operator">&lt;&lt;</span> <span class="ruby-identifier">c</span> }
+    <span class="ruby-identifier">opts</span>.<span class="ruby-identifier">on</span>(<span class="ruby-value str">'-i'</span>, <span class="ruby-value str">'--input FILE'</span>)    { <span class="ruby-operator">|</span><span class="ruby-identifier">f</span><span class="ruby-operator">|</span> <span class="ruby-ivar">@options</span>.<span class="ruby-identifier">input</span> = <span class="ruby-identifier">f</span> }
+    <span class="ruby-identifier">opts</span>.<span class="ruby-identifier">on</span>(<span class="ruby-value str">'-o'</span>, <span class="ruby-value str">'--output FILE'</span>)   { <span class="ruby-operator">|</span><span class="ruby-identifier">f</span><span class="ruby-operator">|</span> <span class="ruby-ivar">@options</span>.<span class="ruby-identifier">output</span> = <span class="ruby-identifier">f</span> }
+    <span class="ruby-identifier">opts</span>.<span class="ruby-identifier">on</span>(<span class="ruby-value str">'-C'</span>, <span class="ruby-value str">'--check'</span>)         { <span class="ruby-operator">|</span><span class="ruby-identifier">c</span><span class="ruby-operator">|</span> <span class="ruby-ivar">@options</span>.<span class="ruby-identifier">check</span> = <span class="ruby-keyword kw">true</span> }
+
+    <span class="ruby-identifier">opts</span>.<span class="ruby-identifier">parse!</span>(<span class="ruby-ivar">@arguments</span>) <span class="ruby-keyword kw">rescue</span> <span class="ruby-keyword kw">return</span> <span class="ruby-keyword kw">false</span>
+    <span class="ruby-keyword kw">true</span>
+  <span class="ruby-keyword kw">end</span></pre>
+</body>
+</html>
