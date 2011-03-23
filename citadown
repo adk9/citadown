@@ -107,7 +107,6 @@ class Citadown
   DBLP_BIBTEX = DBLP_SERVER + "rec/bibtex/"
 
   attr_reader :options
-  attr_accessor :authors
 
   def initialize(arguments, stdin)
     @arguments = arguments
