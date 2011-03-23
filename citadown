@@ -213,7 +213,7 @@ class Citadown
   # Method to check the status of given citation key
   def check_citation(citation)
     keys = []
-    if citation =~ /^\((\w+), (\d+)\)$/
+    if citation =~ /^\((.+),\s*(\d+)\)$/
       author = $1
       year = $2
       authors = get_authors(author)
