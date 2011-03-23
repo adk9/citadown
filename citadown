@@ -71,7 +71,32 @@ require 'rdoc/usage'
 require 'ostruct'
 require 'net/http'
 require 'rexml/document'
-require 'progressbar' # sudo gem install progressbar
+begin
+  require 'progressbar' # sudo gem install progressbar
+rescue LoadError
+  class ProgressBar
+    attr_reader :msg
+    attr_reader :limit
+    attr_reader :cur
+
+    def initialize(msg, limit)
+      @msg = msg
+      @limit = limit
+      @cur = 0
+      $stderr.print "#{@msg}:\t#{@cur}%"
+    end
+
+    def inc
+      @cur += 1
+      $stderr.print "\r"
+      $stderr.print "#{@msg}:\t#{(@cur * 100)/@limit}%"
+    end
+
+    def finish
+      $stderr.print "\n"
+    end
+  end
+end
 
 class Citadown
   VERSION = '0.2.0'
