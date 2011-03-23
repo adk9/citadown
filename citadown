@@ -99,7 +99,7 @@ rescue LoadError
 end
 
 class Citadown
-  VERSION = '0.2.0'
+  VERSION = '0.2.1'
   DBLP_SERVER = "http://dblp.uni-trier.de/"
   DBLP_DB = DBLP_SERVER + "db/indices/a-tree/"
   DBLP_AUTHORS = DBLP_SERVER + "rec/pers/"
