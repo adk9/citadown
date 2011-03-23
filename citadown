@@ -382,8 +382,7 @@ class Citadown
       entry = $1 if content.body =~ /<pre>(.*)<\/pre>/m
       if entry
         # get rid of the html tags
-        entry = entry.gsub(/<(\w+)[^>]*>/m, '')
-        entry = entry.gsub(/<\/\w+>/m, '')
+        entry = entry.gsub(/(<(\w+)[^>]*>)|(<\/\w+>)/m, '')
         entries += entry.split(/^$/)
       else
         puts "% No entry found for ID #{key}." if @options.verbose
