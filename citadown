@@ -4,6 +4,21 @@
 # This is a simple CLI utility to download (BibTex) citations
 # of known authors from DBLP.
 #
+# == Usage
+#   citadown [options]
+#
+#   Options:
+#   -h, --help          	Display this help message
+#   -V, --version       	Display the version
+#   -v, --verbose       	Verbose output
+#   -a, --author NAME   	Name of the author (eg. filinski)
+#   -k, --key ID        	DBLP ID for the bibTex entry (eg. conf/padl/LiT10)
+#   -c, --conf NAME     	Name of the conference (eg. POPL)
+#   -t, --citation (NAME, YEAR) Citation including the author and year (eg. (moggi, 1991))
+#   -i, --input FILE    	File to read the entries from (default input.cit)
+#   -o, --output FILE   	File to write the bib output to (default dblp.bib)
+#   -C, --check         	Sanity check for the input
+#
 # == Description
 #    Here are some examples of how to use citadown:
 #     citadown -v -a filinski > filinski.bib
@@ -28,28 +43,14 @@
 #    the generated bibTex file. By default, it looks for a file ignore.cit in
 #    the CWD for the keywords to ignore.
 #
-# == Usage 
-#   citadown [options]
-#
-#   Options:
-#   -h, --help          	Display this help message
-#   -V, --version       	Display the version
-#   -v, --verbose       	Verbose output
-#   -a, --author NAME   	Name of the author (eg. filinski)
-#   -k, --key ID        	DBLP ID for the bibTex entry (eg. conf/padl/LiT10)
-#   -c, --conf NAME     	Name of the conference (eg. POPL)
-#   -t, --citation (NAME, YEAR) Citation including the author and year (eg. (moggi, 1991))
-#   -i, --input FILE    	File to read the entries from (default input.cit)
-#   -o, --output FILE   	File to write the bib output to (default dblp.bib)
-#   -C, --check         	Sanity check for the input
-#
+
 # == Author
 #   Abhishek Kulkarni
 #
 # == Copyright
 #   Copyright (c) 2011 Abhishek Kulkarni. Licensed under the MIT License:
 #   http://www.opensource.org/licenses/mit-license.php
-
+#
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
 # in the Software without restriction, including without limitation the rights
