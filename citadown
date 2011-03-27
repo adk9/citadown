@@ -273,7 +273,15 @@ class Citadown
       end
     elsif @options.keyword.length >= 1
       return if @options.check
-      @options.keyword.each {|k| bibentries += get_entries(k)}
+      @options.keyword.each do |k|
+        keys = get_keys_from_keyword(k)
+        bar = ProgressBar.new("#{keys.length} papers", keys.length)
+        keys.each {|key|
+          bibentries += get_bibtex(key)
+          bar.inc
+        }
+        bar.finish
+      end
     elsif @options.citation.length >= 1
       @options.citation.each do |c|
         keys = check_citation(c)
@@ -292,7 +300,6 @@ class Citadown
         if entry =~ /^\s*author=(.+)$/
           authors = check_author($1)
           next if @options.check or authors.length != 1
-
           keys = get_keys(authors[0])
           bar = ProgressBar.new("#{keys.length} papers", keys.length)
           keys.each {|key| 
@@ -358,23 +365,23 @@ class Citadown
     return dblpkeys
   end
 
-  # Fetch all the entries associated with a keyword from the DBLP database 
-  def get_entries(keyword)
+  # Fetch all the keys associated with a keyword from the DBLP database 
+  def get_keys_from_keyword(keyword)
     return nil if not keyword
     puts "% Downloading citations for keyword #{keyword}." if @options.verbose
     url = URI.escape(DBLP_MIRROR + "index.php?query=#{keyword}")
     puts "% URL: #{url}" if @options.verbose
 
-    entries = []
+    dblpkeys = []
     content = Net::HTTP.get_response(URI.parse(url))
     case content
     when Net::HTTPSuccess
       content.body.each do |line|
         hits = $1 if line =~ /^\s*AC\.result\.H_boxes\[1\]=(.+)$/
-        hits.gsub(/href=\\"#{DBLP_BIBTEX}([^\\]+)\\"/) {|l| entries += get_bibtex($1)} if hits
+        hits.gsub(/href=\\"#{DBLP_BIBTEX}([^\\]+)\\"/) {|l| dblpkeys << $1} if hits
       end
     end
-    return entries
+    return dblpkeys
   end
 
   # Fetch all the DBLP keys for a given author from a specified year
