@@ -36,6 +36,7 @@
 #   -a, --author NAME   	Name of the author (eg. filinski)
 #   -k, --key ID        	DBLP ID for the bibTex entry (eg. conf/padl/LiT10)
 #   -c, --conf NAME     	Name of the conference (eg. POPL)
+#   -w, --keyword WORD        	Keyword search (author, title, conference) on DBLP
 #   -t, --citation (NAME, YEAR) Citation including the author and year (eg. (moggi, 1991))
 #   -i, --input FILE    	File to read the entries from (default input.cit)
 #   -o, --output FILE   	File to write the bib output to (default dblp.bib)
@@ -105,6 +106,7 @@ class Citadown
   DBLP_AUTHORS = DBLP_SERVER + "rec/pers/"
   DBLP_CONF = DBLP_SERVER + "db/conf/"
   DBLP_BIBTEX = DBLP_SERVER + "rec/bibtex/"
+  DBLP_MIRROR = "http://dblp.mpi-inf.mpg.de/dblp-mirror/"
 
   attr_reader :options
 
@@ -118,6 +120,7 @@ class Citadown
     @options.author = []
     @options.key = []
     @options.conf = []
+    @options.keyword = []
     @options.citation = []
     @options.input = "input.cit"
     @options.output = "dblp.bib"
@@ -141,6 +144,7 @@ class Citadown
     opts.on('-a', '--author NAME')   { |a| @options.author << a }
     opts.on('-k', '--key ID')        { |k| @options.key << k }
     opts.on('-c', '--conf NAME')     { |c| @options.conf << c }
+    opts.on('-w', '--keyword WORD')  { |w| @options.keyword << w }
     opts.on('-i', '--input FILE')    { |f| @options.input = f }
     opts.on('-o', '--output FILE')   { |f| @options.output = f }
     opts.on('-t', '--citation (NAME, YEAR)') { |t| @options.citation << t }
@@ -153,7 +157,7 @@ class Citadown
   # True if required arguments were provided
   def arguments_valid?
     true if @options.author.length >= 1 or @options.key.length >= 1 or
-      @options.conf.length >= 1 or @options.input != nil
+      @options.conf.length >= 1 or @options.keyword.length >= 1 or @options.input != nil
   end
 
   # Output a detailed help message
@@ -267,6 +271,9 @@ class Citadown
         bibentries += check_conf(c)
         return if @options.check or bibentries.length == 0
       end
+    elsif @options.keyword.length >= 1
+      return if @options.check
+      @options.keyword.each {|k| bibentries += get_entries(k)}
     elsif @options.citation.length >= 1
       @options.citation.each do |c|
         keys = check_citation(c)
@@ -336,7 +343,7 @@ class Citadown
   def get_keys(author)
     return nil if not author
     puts "% Downloading citations for author #{author}." if @options.verbose
-    url = DBLP_AUTHORS + author + "/xk"
+    url = URI.escape(DBLP_AUTHORS + author + "/xk")
     puts "% URL: #{url}" if @options.verbose
 
     dblpkeys = []
@@ -349,6 +356,25 @@ class Citadown
       end
     end
     return dblpkeys
+  end
+
+  # Fetch all the entries associated with a keyword from the DBLP database 
+  def get_entries(keyword)
+    return nil if not keyword
+    puts "% Downloading citations for keyword #{keyword}." if @options.verbose
+    url = URI.escape(DBLP_MIRROR + "index.php?query=#{keyword}")
+    puts "% URL: #{url}" if @options.verbose
+
+    entries = []
+    content = Net::HTTP.get_response(URI.parse(url))
+    case content
+    when Net::HTTPSuccess
+      content.body.each do |line|
+        hits = $1 if line =~ /^\s*AC\.result\.H_boxes\[1\]=(.+)$/
+        hits.gsub(/href=\\"#{DBLP_BIBTEX}([^\\]+)\\"/) {|l| entries += get_bibtex($1)} if hits
+      end
+    end
+    return entries
   end
 
   # Fetch all the DBLP keys for a given author from a specified year
