@@ -4,13 +4,30 @@
 # This is a simple CLI utility to download (BibTex) citations
 # of known authors from DBLP.
 #
+# == Usage
+#   citadown [options]
+#
+#   Options:
+#   -h, --help          	Display this help message
+#   -V, --version       	Display the version
+#   -v, --verbose       	Verbose output
+#   -a, --author NAME   	Name of the author (eg. filinski)
+#   -k, --key ID        	DBLP ID for the bibTex entry (eg. conf/padl/LiT10)
+#   -c, --conf NAME     	Name of the conference (eg. POPL)
+#   -t, --citation (NAME, YEAR) Citation including the author and year (eg. (moggi, 1991))
+#   -i, --input FILE    	File to read the entries from (default input.cit)
+#   -o, --output FILE   	File to write the bib output to (default dblp.bib)
+#   -C, --check         	Sanity check for the input
+#
 # == Description
 #    Here are some examples of how to use citadown:
 #     citadown -v -a filinski > filinski.bib
 #     citadown -v -a "per martin lof" -a "grigori mints" > pml.bib
 #     citadown -k "DBLP:conf/lics/CoquandS06"
 #     citadown -k "conf/popl/2010"
-#     citadown -i sample_entries
+#     citadown -c icfp
+#     citadown -i input.cit
+#     citadown -t "(moggi, 1991)"
 #
 #    All the (author and key) entries to read the citations from can be
 #    specified in an input file passed as a runtime parameter to citadown.
@@ -26,29 +43,15 @@
 #    the generated bibTex file. By default, it looks for a file ignore.cit in
 #    the CWD for the keywords to ignore.
 #
-# == Usage 
-#   citadown [options]
-#
-#   Options:
-#   -h, --help          	Display this help message
-#   -V, --version       	Display the version
-#   -v, --verbose       	Verbose output
-#   -a, --author NAME   	Name of the author (eg. filinski)
-#   -k, --key ID        	DBLP ID for the bibTex entry (eg. conf/padl/LiT10)
-#   -c, --conf NAME     	Name of the conference (eg. POPL)
+
 #   -w, --keyword WORD        	Keyword search (author, title, conference) on DBLP
-#   -t, --citation (NAME, YEAR) Citation including the author and year (eg. (moggi, 1991))
-#   -i, --input FILE    	File to read the entries from (default input.cit)
-#   -o, --output FILE   	File to write the bib output to (default dblp.bib)
-#   -C, --check         	Sanity check for the input
-#
 # == Author
 #   Abhishek Kulkarni
 #
 # == Copyright
 #   Copyright (c) 2011 Abhishek Kulkarni. Licensed under the MIT License:
 #   http://www.opensource.org/licenses/mit-license.php
-
+#
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
 # in the Software without restriction, including without limitation the rights
@@ -215,7 +218,7 @@ class Citadown
   # Method to check the status of given citation key
   def check_citation(citation)
     keys = []
-    if citation =~ /^\((\w+), (\d+)\)$/
+    if citation =~ /^\((.+),\s*(\d+)\)$/
       author = $1
       year = $2
       authors = get_authors(author)
@@ -413,8 +416,7 @@ class Citadown
       entry = $1 if content.body =~ /<pre>(.*)<\/pre>/m
       if entry
         # get rid of the html tags
-        entry = entry.gsub(/<(\w+)[^>]*>/m, '')
-        entry = entry.gsub(/<\/\w+>/m, '')
+        entry = entry.gsub(/(<(\w+)[^>]*>)|(<\/\w+>)/m, '')
         entries += entry.split(/^$/)
       else
         puts "% No entry found for ID #{key}." if @options.verbose
