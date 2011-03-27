@@ -206,13 +206,13 @@ class Citadown
 
   # Method to check the status of the given conference
   def check_conf(conf)
-    bibentries = get_conf(conf)
-    if bibentries.length > 0
+    keys = get_conf(conf)
+    if keys.length > 0
       puts "% Conference name #{conf}\t\t\t\t.. OK"
     else
       puts "% Conference name #{conf}\t\t\t\t.. NOT FOUND"
     end
-    return bibentries
+    return keys
   end
 
   # Method to check the status of given citation key
@@ -271,8 +271,14 @@ class Citadown
       end
     elsif @options.conf.length >= 1
       @options.conf.each do |c|
-        bibentries += check_conf(c)
-        return if @options.check or bibentries.length == 0
+        keys = check_conf(c)
+        return if @options.check or keys.length == 0
+        bar = ProgressBar.new("#{keys.length} papers", keys.length)
+        keys.each {|key| 
+          bibentries += get_bibtex(key)
+          bar.inc
+        }
+        bar.finish
       end
     elsif @options.keyword.length >= 1
       return if @options.check
@@ -441,7 +447,7 @@ class Citadown
         return entries
       end
       links = []
-      content.body.each_line do |line|
+      content.body.each do |line|
         entry = $1 if line =~ /^.*<a href="([^\/]+\.html)">Contents<\/a>.*$/
         links << entry if entry
       end
@@ -449,7 +455,7 @@ class Citadown
       return entries
     end
 
-    bentries = []
+    dblpkeys = []
     links.each do |link|
       puts "% Found: #{link}" if @options.verbose
       data = Net::HTTP.get_response(URI.parse(url + "/" + link))
@@ -457,18 +463,11 @@ class Citadown
       when Net::HTTPSuccess
         data.body.each_line do |line|
           entry = $1 if line =~ /^.*<a href="#{DBLP_BIBTEX}([^>]+)\.xml">.*$/
-          bentries << entry if entry
+          dblpkeys << entry if entry
         end
       end
     end
-
-    if bentries
-      bentries.each do |b|
-        puts "% Downloading bibTex for ID #{b}." if @options.verbose
-        entries += get_bibtex(b)
-      end
-    end
-    return entries
+    return dblpkeys
   end
 
   # Print the bibTex entries to the output file
