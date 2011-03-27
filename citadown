@@ -319,10 +319,26 @@ class Citadown
         elsif entry =~ /^\s*key=(.+)$/
           bibentries += check_key($1)
         elsif entry =~ /^\s*conf=(.+)$/
-          bibentries += check_conf($1)
+          keys += check_conf($1)
+          next if @options.check or keys.length < 1
+          bar = ProgressBar.new("#{keys.length} papers", keys.length)
+          keys.each {|key|
+            bibentries += get_bibtex(key)
+            bar.inc
+          }
+          bar.finish
         elsif entry =~ /^\s*citation=(.+)$/
           keys = check_citation($1)
           keys.each {|key| bibentries += get_bibtex(key)} if keys
+        elsif entry =~ /^\s*keyword=(.+)$/
+          keys += get_keys_from_keyword($1)
+          next if @options.check or keys.length < 1
+          bar = ProgressBar.new("#{keys.length} papers", keys.length)
+          keys.each {|key|
+            bibentries += get_bibtex(key)
+            bar.inc
+          }
+          bar.finish
         else
           puts "% Ignoring invalid entry #{$1}"
         end
