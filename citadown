@@ -18,6 +18,7 @@
 #   -i, --input FILE    	File to read the entries from (default input.cit)
 #   -o, --output FILE   	File to write the bib output to (default dblp.bib)
 #   -C, --check         	Sanity check for the input
+#   -w, --keyword WORD        	Keyword search (author, title, conference) on DBLP
 #
 # == Description
 #    Here are some examples of how to use citadown:
@@ -44,7 +45,6 @@
 #    the CWD for the keywords to ignore.
 #
 
-#   -w, --keyword WORD        	Keyword search (author, title, conference) on DBLP
 # == Author
 #   Abhishek Kulkarni
 #
