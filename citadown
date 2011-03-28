@@ -29,6 +29,7 @@
 #     citadown -c icfp
 #     citadown -i input.cit
 #     citadown -t "(moggi, 1991)"
+#     citadown -w continuations
 #
 #    All the (author and key) entries to read the citations from can be
 #    specified in an input file passed as a runtime parameter to citadown.
