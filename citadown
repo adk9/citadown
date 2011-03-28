@@ -431,25 +431,15 @@ class Citadown
 
   # Fetch all the bibTex entries associated with a conference
   def get_conf(conf)
-    entries = []
+    dblpkeys = []
     puts "% Downloading all entries for conference #{conf}." if @options.verbose
     body = fetch_body(DBLP_CONF + conf.downcase + "/index.html")
     if @options.check
-      entries << true
-      return entries
-    end
-    links = []
-    body.each do |line|
-      entry = $1 if line =~ /^.*<a href="([^\/]+\.html)">Contents<\/a>.*$/
-      links << entry if entry
-    end
-
-    dblpkeys = []
-    links.each do |link|
-      body = fetch_body(DBLP_CONF + conf.downcase + "/" + link)
-      body.each_line do |line|
-        entry = $1 if line =~ /^.*<a href="#{DBLP_BIBTEX}([^>]+)\.xml">.*$/
-        dblpkeys << entry if entry
+      dblpkeys << true
+    else
+      body.gsub(/"([^\/]+\.html)">Contents/) do |l|
+        page = fetch_body(DBLP_CONF + conf.downcase + "/" + $1)
+        page.gsub(/"#{DBLP_BIBTEX}([^>]+)\.xml"/) {|k| dblpkeys << $1} if page
       end
     end
     return dblpkeys
