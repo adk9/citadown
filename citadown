@@ -22,12 +22,10 @@
 #
 # == Description
 #    Here are some examples of how to use citadown:
-#     citadown -v -a filinski > filinski.bib
-#     citadown -v -a "per martin lof" -a "grigori mints" > pml.bib
-#     citadown -k "DBLP:conf/lics/CoquandS06"
+#     citadown -v -a "per martin lof" -a "grigori mints"
 #     citadown -k "conf/popl/2010"
 #     citadown -c icfp
-#     citadown -i input.cit
+#     citadown -i bib.cit -o paper.bib
 #     citadown -t "(moggi, 1991)"
 #     citadown -w continuations
 #
