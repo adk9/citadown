@@ -103,7 +103,7 @@ rescue LoadError
 end
 
 class Citadown
-  VERSION = '0.2.1'
+  VERSION = '0.2.2'
   DBLP_SERVER = "http://dblp.uni-trier.de/"
   DBLP_DB = DBLP_SERVER + "db/indices/a-tree/"
   DBLP_AUTHORS = DBLP_SERVER + "rec/pers/"
@@ -177,6 +177,18 @@ class Citadown
   # Output the current version
   def output_version
     puts "#{File.basename(__FILE__)} v#{VERSION}"
+  end
+
+  # Fetch the body given a URL to the web page
+  def fetch_body(url)
+    url = URI.escape(url)
+    content = Net::HTTP.get_response(URI.parse(url))
+    case content
+    when Net::HTTPSuccess
+      return content.body
+    else
+      content.error!
+    end
   end
 
   # Method to check the status of the given author 
@@ -355,18 +367,9 @@ class Citadown
     if author =~ /\w\/.*:.*$/
       authors << author
     else
-      url = DBLP_SERVER + "search/author?xauthor="
-      url += URI.escape(author)
-      content = Net::HTTP.get_response(URI.parse(url))
-      case content
-      when Net::HTTPSuccess
-        doc = REXML::Document.new(content.body)
-        doc.elements.each('authors/author') do |e|
-          authors << e.attributes['urlpt']
-        end
-      else
-        content.error!
-      end
+      body = fetch_body(DBLP_SERVER + "search/author?xauthor=" + author)
+      doc = REXML::Document.new(body) if body
+      doc.elements.each('authors/author') {|e| authors << e.attributes['urlpt']}
     end
     return authors
   end
@@ -375,18 +378,11 @@ class Citadown
   def get_keys(author)
     return nil if not author
     puts "% Downloading citations for author #{author}." if @options.verbose
-    url = URI.escape(DBLP_AUTHORS + author + "/xk")
-    puts "% URL: #{url}" if @options.verbose
 
     dblpkeys = []
-    content = Net::HTTP.get_response(URI.parse(url))
-    case content
-    when Net::HTTPSuccess
-      doc = REXML::Document.new(content.body)
-      doc.elements.each('dblpperson/dblpkey') do |e|
-        dblpkeys << e.text
-      end
-    end
+    body = fetch_body(DBLP_AUTHORS + author + "/xk")
+    doc = REXML::Document.new(body) if body
+    doc.elements.each('dblpperson/dblpkey') {|e| dblpkeys << e.text}
     return dblpkeys
   end
 
@@ -394,17 +390,12 @@ class Citadown
   def get_keys_from_keyword(keyword)
     return nil if not keyword
     puts "% Downloading citations for keyword #{keyword}." if @options.verbose
-    url = URI.escape(DBLP_MIRROR + "index.php?query=#{keyword}")
-    puts "% URL: #{url}" if @options.verbose
 
     dblpkeys = []
-    content = Net::HTTP.get_response(URI.parse(url))
-    case content
-    when Net::HTTPSuccess
-      content.body.each do |line|
-        hits = $1 if line =~ /^\s*AC\.result\.H_boxes\[1\]=(.+)$/
-        hits.gsub(/href=\\"#{DBLP_BIBTEX}([^\\]+)\\"/) {|l| dblpkeys << $1} if hits
-      end
+    body = fetch_body(DBLP_MIRROR + "index.php?query=#{keyword}")
+    body.each do |line|
+      hits = $1 if line =~ /^\s*AC\.result\.H_boxes\[1\]=(.+)$/
+      hits.gsub(/href=\\"#{DBLP_BIBTEX}([^\\]+)\\"/) {|l| dblpkeys << $1} if hits
     end
     return dblpkeys
   end
@@ -413,16 +404,11 @@ class Citadown
   def get_keys_by_year(author, year)
     return nil if not author or not year
     puts "% Downloading citations (#{author}, #{year})." if @options.verbose
-    url = DBLP_DB + author + ".html"
-    puts "% URL: #{url}" if @options.verbose
 
     dblpkeys = []
-    content = Net::HTTP.get_response(URI.parse(url))
-    case content
-    when Net::HTTPSuccess
-      chunk = $1 if content.body =~ /<tr><th><\/th><th colspan="2" bgcolor="#FFFFCC">#{year}<\/th><\/tr>(.+?)<\/th><\/tr>.+/m
-      chunk.each {|line| dblpkeys << $1 if line =~ /^.*<a href="#{DBLP_BIBTEX}([^>]+)\.xml">.*$/ } if chunk
-    end
+    body = fetch_body(DBLP_DB + author + ".html")
+    chunk = $1 if body =~ /<tr><th><\/th><th colspan="2" bgcolor="#FFFFCC">#{year}<\/th><\/tr>(.+?)<\/th><\/tr>.+/m
+    chunk.each {|line| dblpkeys << $1 if line =~ /^.*<a href="#{DBLP_BIBTEX}([^>]+)\.xml">.*$/ } if chunk
     return dblpkeys
   end
 
@@ -431,56 +417,39 @@ class Citadown
     entries = []
     key = $1 if key =~ /^\w*:(.+)$/
 
-    url = URI.escape(DBLP_BIBTEX + key)
-    content = Net::HTTP.get_response(URI.parse(url))
-    case content
-    when Net::HTTPSuccess
-      entry = $1 if content.body =~ /<pre>(.*)<\/pre>/m
-      if entry
-        # get rid of the html tags
-        entry = entry.gsub(/(<(\w+)[^>]*>)|(<\/\w+>)/m, '')
-        entries += entry.split(/^$/)
-      else
-        puts "% No entry found for ID #{key}." if @options.verbose
-      end
-      return entries
+    body = fetch_body(DBLP_BIBTEX + key)
+    entry = $1 if body =~ /<pre>(.*)<\/pre>/m
+    if entry
+      # get rid of the html tags
+      entry = entry.gsub(/(<(\w+)[^>]*>)|(<\/\w+>)/m, '')
+      entries += entry.split(/^$/)
     else
-      content.error!
+      puts "% No entry found for ID #{key}." if @options.verbose
     end
+    return entries
   end
 
   # Fetch all the bibTex entries associated with a conference
   def get_conf(conf)
     entries = []
-    url = DBLP_CONF + conf.downcase
-    puts "% URL: #{url}/index.html" if @options.verbose
-
-    content = Net::HTTP.get_response(URI.parse(url + "/index.html"))
-    case content
-    when Net::HTTPSuccess
-      if @options.check
-        entries << true
-        return entries
-      end
-      links = []
-      content.body.each do |line|
-        entry = $1 if line =~ /^.*<a href="([^\/]+\.html)">Contents<\/a>.*$/
-        links << entry if entry
-      end
-    else
+    puts "% Downloading all entries for conference #{conf}." if @options.verbose
+    body = fetch_body(DBLP_CONF + conf.downcase + "/index.html")
+    if @options.check
+      entries << true
       return entries
+    end
+    links = []
+    body.each do |line|
+      entry = $1 if line =~ /^.*<a href="([^\/]+\.html)">Contents<\/a>.*$/
+      links << entry if entry
     end
 
     dblpkeys = []
     links.each do |link|
-      puts "% Found: #{link}" if @options.verbose
-      data = Net::HTTP.get_response(URI.parse(url + "/" + link))
-      case data
-      when Net::HTTPSuccess
-        data.body.each_line do |line|
-          entry = $1 if line =~ /^.*<a href="#{DBLP_BIBTEX}([^>]+)\.xml">.*$/
-          dblpkeys << entry if entry
-        end
+      body = fetch_body(DBLP_CONF + conf.downcase + "/" + link)
+      body.each_line do |line|
+        entry = $1 if line =~ /^.*<a href="#{DBLP_BIBTEX}([^>]+)\.xml">.*$/
+        dblpkeys << entry if entry
       end
     end
     return dblpkeys
