@@ -231,8 +231,7 @@ class Citadown
   def check_citation(citation)
     keys = []
     if citation =~ /^\((.+),\s*(\d+)\)$/
-      author = $1
-      year = $2
+      author, year = $1, $2
       authors = get_authors(author)
       if authors.length < 1
         puts "% Citation key (#{author}, #{year})\t\t\t.. NOT FOUND"
