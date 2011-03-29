@@ -56,7 +56,7 @@
     </tr>
     <tr class="top-aligned-row">
       <td><strong>Last Update:</strong></td>
-      <td>Mon Mar 21 20:25:13 -0400 2011</td>
+      <td>Tue Mar 29 15:44:25 -0400 2011</td>
     </tr>
     </table>
   </div>
@@ -74,14 +74,32 @@
 This is a simple CLI utility to download (BibTex) citations of known
 authors from DBLP.
 </p>
+<h2>Usage</h2>
+<pre>
+  citadown [options]
+
+  Options:
+  -h, --help                  Display this help message
+  -V, --version               Display the version
+  -v, --verbose               Verbose output
+  -a, --author NAME           Name of the author (eg. filinski)
+  -k, --key ID                DBLP ID for the bibTex entry (eg. conf/padl/LiT10)
+  -c, --conf NAME             Name of the conference (eg. POPL)
+  -t, --citation (NAME, YEAR) Citation including the author and year (eg. (moggi, 1991))
+  -i, --input FILE            File to read the entries from (default input.cit)
+  -o, --output FILE           File to write the bib output to (default dblp.bib)
+  -C, --check                 Sanity check for the input
+  -w, --keyword WORD          Keyword search (author, title, conference) on DBLP
+</pre>
 <h2>Description</h2>
 <pre>
    Here are some examples of how to use citadown:
-    citadown -v -a filinski &gt; filinski.bib
-    citadown -v -a &quot;per martin lof&quot; -a &quot;grigori mints&quot; &gt; pml.bib
-    citadown -k &quot;DBLP:conf/lics/CoquandS06&quot;
+    citadown -v -a &quot;per martin lof&quot; -a &quot;grigori mints&quot;
     citadown -k &quot;conf/popl/2010&quot;
-    citadown -i sample_entries
+    citadown -c icfp
+    citadown -i bib.cit -o paper.bib
+    citadown -t &quot;(moggi, 1991)&quot;
+    citadown -w continuations
 
    All the (author and key) entries to read the citations from can be
    specified in an input file passed as a runtime parameter to citadown.
@@ -96,30 +114,6 @@ authors from DBLP.
    to define a set of tags that you would like to ignore and exclude from
    the generated bibTex file. By default, it looks for a file ignore.cit in
    the CWD for the keywords to ignore.
-</pre>
-<h2>Usage</h2>
-<pre>
-  citadown [options]
-
-  Options:
-  -h, --help          Display this help message
-  -V, --version       Display the version
-  -v, --verbose       Verbose output
-  -a, --author NAME   Name of the author (eg. filinski)
-  -k, --key ID        DBLP ID for the bibTex entry (eg. conf/padl/LiT10)
-  -c, --conf NAME     Name of the conference (eg. POPL)
-  -i, --input FILE    File to read the entries from (default input.cit)
-  -o, --output FILE   File to write the bib output to (default dblp.bib)
-  -C, --check         Sanity check for the input
-</pre>
-<h2>Author</h2>
-<pre>
-  Abhishek Kulkarni
-</pre>
-<h2>Copyright</h2>
-<pre>
-  Copyright (c) 2011 Abhishek Kulkarni. Licensed under the MIT License:
-  http://www.opensource.org/licenses/mit-license.php
 </pre>
 
     </div>
