@@ -293,7 +293,7 @@ class Citadown
     elsif @options.keyword.length >= 1
       return if @options.check
       @options.keyword.each do |k|
-        keys = get_keys_from_keyword(k)
+        keys = get_keys_by_keyword(k)
         bar = ProgressBar.new("#{keys.length} papers", keys.length)
         keys.each {|key|
           bibentries += get_bibtex(key)
@@ -341,7 +341,7 @@ class Citadown
           keys = check_citation($1)
           keys.each {|key| bibentries += get_bibtex(key)} if keys
         elsif entry =~ /^\s*keyword=(.+)$/
-          keys += get_keys_from_keyword($1)
+          keys += get_keys_by_keyword($1)
           next if @options.check or keys.length < 1
           bar = ProgressBar.new("#{keys.length} papers", keys.length)
           keys.each {|key|
@@ -385,7 +385,7 @@ class Citadown
   end
 
   # Fetch all the keys associated with a keyword from the DBLP database 
-  def get_keys_from_keyword(keyword)
+  def get_keys_by_keyword(keyword)
     return nil if not keyword
     puts "% Downloading citations for keyword #{keyword}." if @options.verbose
 
