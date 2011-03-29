@@ -390,7 +390,7 @@ class Citadown
     puts "% Downloading citations for keyword #{keyword}." if @options.verbose
 
     dblpkeys = []
-    body = fetch_body(DBLP_MIRROR + "index.php?query=#{keyword}")
+    body = fetch_body(DBLP_MIRROR + "index.php?query=#{keyword}&qp=H1.60")
     body.each do |line|
       hits = $1 if line =~ /^\s*AC\.result\.H_boxes\[1\]=(.+)$/
       hits.gsub(/href=\\"#{DBLP_BIBTEX}([^\\]+)\\"/) {|l| dblpkeys << $1} if hits
