@@ -87,20 +87,25 @@
 
       <div class="name-list">
       <a href="#M000004">arguments_valid?</a>&nbsp;&nbsp;
-      <a href="#M000008">check_author</a>&nbsp;&nbsp;
-      <a href="#M000010">check_conf</a>&nbsp;&nbsp;
-      <a href="#M000009">check_key</a>&nbsp;&nbsp;
-      <a href="#M000012">get_authors</a>&nbsp;&nbsp;
-      <a href="#M000014">get_bibtex</a>&nbsp;&nbsp;
-      <a href="#M000015">get_conf</a>&nbsp;&nbsp;
-      <a href="#M000013">get_keys</a>&nbsp;&nbsp;
+      <a href="#M000009">check_author</a>&nbsp;&nbsp;
+      <a href="#M000012">check_citation</a>&nbsp;&nbsp;
+      <a href="#M000011">check_conf</a>&nbsp;&nbsp;
+      <a href="#M000010">check_key</a>&nbsp;&nbsp;
+      <a href="#M000008">fetch_body</a>&nbsp;&nbsp;
+      <a href="#M000015">get_authors</a>&nbsp;&nbsp;
+      <a href="#M000019">get_bibtex</a>&nbsp;&nbsp;
+      <a href="#M000020">get_conf</a>&nbsp;&nbsp;
+      <a href="#M000016">get_keys</a>&nbsp;&nbsp;
+      <a href="#M000017">get_keys_by_keyword</a>&nbsp;&nbsp;
+      <a href="#M000018">get_keys_by_year</a>&nbsp;&nbsp;
+      <a href="#M000013">interrupted</a>&nbsp;&nbsp;
       <a href="#M000001">new</a>&nbsp;&nbsp;
       <a href="#M000005">output_help</a>&nbsp;&nbsp;
       <a href="#M000006">output_usage</a>&nbsp;&nbsp;
       <a href="#M000007">output_version</a>&nbsp;&nbsp;
       <a href="#M000003">parsed_options?</a>&nbsp;&nbsp;
-      <a href="#M000016">print_entries</a>&nbsp;&nbsp;
-      <a href="#M000011">process_args</a>&nbsp;&nbsp;
+      <a href="#M000021">print_entries</a>&nbsp;&nbsp;
+      <a href="#M000014">process_args</a>&nbsp;&nbsp;
       <a href="#M000002">run</a>&nbsp;&nbsp;
       </div>
     </div>
@@ -121,7 +126,7 @@
         <tr class="top-aligned-row context-row">
           <td class="context-item-name">VERSION</td>
           <td>=</td>
-          <td class="context-item-value">'0.2.0'</td>
+          <td class="context-item-value">'0.2.2'</td>
         </tr>
         <tr class="top-aligned-row context-row">
           <td class="context-item-name">DBLP_SERVER</td>
@@ -148,6 +153,11 @@
           <td>=</td>
           <td class="context-item-value">DBLP_SERVER + &quot;rec/bibtex/&quot;</td>
         </tr>
+        <tr class="top-aligned-row context-row">
+          <td class="context-item-name">DBLP_MIRROR</td>
+          <td>=</td>
+          <td class="context-item-value">&quot;http://dblp.mpi-inf.mpg.de/dblp-mirror/&quot;</td>
+        </tr>
         </table>
       </div>
     </div>
@@ -159,11 +169,6 @@
 
       <div class="name-list">
         <table>
-        <tr class="top-aligned-row context-row">
-          <td class="context-item-name">authors</td>
-          <td class="context-item-value">&nbsp;[RW]&nbsp;</td>
-          <td class="context-item-desc"></td>
-        </tr>
         <tr class="top-aligned-row context-row">
           <td class="context-item-name">options</td>
           <td class="context-item-value">&nbsp;[R]&nbsp;</td>
@@ -228,12 +233,12 @@ True if required arguments were provided
         </div>
       </div>
 
-      <div id="method-M000008" class="method-detail">
-        <a name="M000008"></a>
+      <div id="method-M000009" class="method-detail">
+        <a name="M000009"></a>
 
         <div class="method-heading">
-          <a href="Citadown.src/M000008.html" target="Code" class="method-signature"
-            onclick="popupCode('Citadown.src/M000008.html');return false;">
+          <a href="Citadown.src/M000009.html" target="Code" class="method-signature"
+            onclick="popupCode('Citadown.src/M000009.html');return false;">
           <span class="method-name">check_author</span><span class="method-args">(author)</span>
           </a>
         </div>
@@ -245,12 +250,29 @@ Method to check the status of the given author
         </div>
       </div>
 
-      <div id="method-M000010" class="method-detail">
-        <a name="M000010"></a>
+      <div id="method-M000012" class="method-detail">
+        <a name="M000012"></a>
 
         <div class="method-heading">
-          <a href="Citadown.src/M000010.html" target="Code" class="method-signature"
-            onclick="popupCode('Citadown.src/M000010.html');return false;">
+          <a href="Citadown.src/M000012.html" target="Code" class="method-signature"
+            onclick="popupCode('Citadown.src/M000012.html');return false;">
+          <span class="method-name">check_citation</span><span class="method-args">(citation)</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Method to check the status of given citation key
+</p>
+        </div>
+      </div>
+
+      <div id="method-M000011" class="method-detail">
+        <a name="M000011"></a>
+
+        <div class="method-heading">
+          <a href="Citadown.src/M000011.html" target="Code" class="method-signature"
+            onclick="popupCode('Citadown.src/M000011.html');return false;">
           <span class="method-name">check_conf</span><span class="method-args">(conf)</span>
           </a>
         </div>
@@ -262,12 +284,12 @@ Method to check the status of the given conference
         </div>
       </div>
 
-      <div id="method-M000009" class="method-detail">
-        <a name="M000009"></a>
+      <div id="method-M000010" class="method-detail">
+        <a name="M000010"></a>
 
         <div class="method-heading">
-          <a href="Citadown.src/M000009.html" target="Code" class="method-signature"
-            onclick="popupCode('Citadown.src/M000009.html');return false;">
+          <a href="Citadown.src/M000010.html" target="Code" class="method-signature"
+            onclick="popupCode('Citadown.src/M000010.html');return false;">
           <span class="method-name">check_key</span><span class="method-args">(key)</span>
           </a>
         </div>
@@ -279,12 +301,29 @@ Method to check the status of the given DBLP key
         </div>
       </div>
 
-      <div id="method-M000012" class="method-detail">
-        <a name="M000012"></a>
+      <div id="method-M000008" class="method-detail">
+        <a name="M000008"></a>
 
         <div class="method-heading">
-          <a href="Citadown.src/M000012.html" target="Code" class="method-signature"
-            onclick="popupCode('Citadown.src/M000012.html');return false;">
+          <a href="Citadown.src/M000008.html" target="Code" class="method-signature"
+            onclick="popupCode('Citadown.src/M000008.html');return false;">
+          <span class="method-name">fetch_body</span><span class="method-args">(url)</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Fetch the body given a URL to the web page
+</p>
+        </div>
+      </div>
+
+      <div id="method-M000015" class="method-detail">
+        <a name="M000015"></a>
+
+        <div class="method-heading">
+          <a href="Citadown.src/M000015.html" target="Code" class="method-signature"
+            onclick="popupCode('Citadown.src/M000015.html');return false;">
           <span class="method-name">get_authors</span><span class="method-args">(author)</span>
           </a>
         </div>
@@ -296,12 +335,12 @@ Fetch all the authors from the DBLP database
         </div>
       </div>
 
-      <div id="method-M000014" class="method-detail">
-        <a name="M000014"></a>
+      <div id="method-M000019" class="method-detail">
+        <a name="M000019"></a>
 
         <div class="method-heading">
-          <a href="Citadown.src/M000014.html" target="Code" class="method-signature"
-            onclick="popupCode('Citadown.src/M000014.html');return false;">
+          <a href="Citadown.src/M000019.html" target="Code" class="method-signature"
+            onclick="popupCode('Citadown.src/M000019.html');return false;">
           <span class="method-name">get_bibtex</span><span class="method-args">(key)</span>
           </a>
         </div>
@@ -313,12 +352,12 @@ Fetch the bibTex entry associated with a DBLP key
         </div>
       </div>
 
-      <div id="method-M000015" class="method-detail">
-        <a name="M000015"></a>
+      <div id="method-M000020" class="method-detail">
+        <a name="M000020"></a>
 
         <div class="method-heading">
-          <a href="Citadown.src/M000015.html" target="Code" class="method-signature"
-            onclick="popupCode('Citadown.src/M000015.html');return false;">
+          <a href="Citadown.src/M000020.html" target="Code" class="method-signature"
+            onclick="popupCode('Citadown.src/M000020.html');return false;">
           <span class="method-name">get_conf</span><span class="method-args">(conf)</span>
           </a>
         </div>
@@ -330,12 +369,12 @@ Fetch all the bibTex entries associated with a conference
         </div>
       </div>
 
-      <div id="method-M000013" class="method-detail">
-        <a name="M000013"></a>
+      <div id="method-M000016" class="method-detail">
+        <a name="M000016"></a>
 
         <div class="method-heading">
-          <a href="Citadown.src/M000013.html" target="Code" class="method-signature"
-            onclick="popupCode('Citadown.src/M000013.html');return false;">
+          <a href="Citadown.src/M000016.html" target="Code" class="method-signature"
+            onclick="popupCode('Citadown.src/M000016.html');return false;">
           <span class="method-name">get_keys</span><span class="method-args">(author)</span>
           </a>
         </div>
@@ -345,6 +384,54 @@ Fetch all the bibTex entries associated with a conference
 Fetch all the DBLP keys associated with a given author from the DBLP
 database
 </p>
+        </div>
+      </div>
+
+      <div id="method-M000017" class="method-detail">
+        <a name="M000017"></a>
+
+        <div class="method-heading">
+          <a href="Citadown.src/M000017.html" target="Code" class="method-signature"
+            onclick="popupCode('Citadown.src/M000017.html');return false;">
+          <span class="method-name">get_keys_by_keyword</span><span class="method-args">(keyword)</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Fetch all the keys associated with a keyword from the DBLP database
+</p>
+        </div>
+      </div>
+
+      <div id="method-M000018" class="method-detail">
+        <a name="M000018"></a>
+
+        <div class="method-heading">
+          <a href="Citadown.src/M000018.html" target="Code" class="method-signature"
+            onclick="popupCode('Citadown.src/M000018.html');return false;">
+          <span class="method-name">get_keys_by_year</span><span class="method-args">(author, year)</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Fetch all the DBLP keys for a given author from a specified year
+</p>
+        </div>
+      </div>
+
+      <div id="method-M000013" class="method-detail">
+        <a name="M000013"></a>
+
+        <div class="method-heading">
+          <a href="Citadown.src/M000013.html" target="Code" class="method-signature"
+            onclick="popupCode('Citadown.src/M000013.html');return false;">
+          <span class="method-name">interrupted</span><span class="method-args">(bibentries)</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
         </div>
       </div>
 
@@ -413,12 +500,12 @@ Output the current version
         </div>
       </div>
 
-      <div id="method-M000016" class="method-detail">
-        <a name="M000016"></a>
+      <div id="method-M000021" class="method-detail">
+        <a name="M000021"></a>
 
         <div class="method-heading">
-          <a href="Citadown.src/M000016.html" target="Code" class="method-signature"
-            onclick="popupCode('Citadown.src/M000016.html');return false;">
+          <a href="Citadown.src/M000021.html" target="Code" class="method-signature"
+            onclick="popupCode('Citadown.src/M000021.html');return false;">
           <span class="method-name">print_entries</span><span class="method-args">(entries)</span>
           </a>
         </div>
@@ -430,12 +517,12 @@ Print the bibTex entries to the output file
         </div>
       </div>
 
-      <div id="method-M000011" class="method-detail">
-        <a name="M000011"></a>
+      <div id="method-M000014" class="method-detail">
+        <a name="M000014"></a>
 
         <div class="method-heading">
-          <a href="Citadown.src/M000011.html" target="Code" class="method-signature"
-            onclick="popupCode('Citadown.src/M000011.html');return false;">
+          <a href="Citadown.src/M000014.html" target="Code" class="method-signature"
+            onclick="popupCode('Citadown.src/M000014.html');return false;">
           <span class="method-name">process_args</span><span class="method-args">()</span>
           </a>
         </div>

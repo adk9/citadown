@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE html 
+     PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html>
+<head>
+  <title>get_keys_by_keyword (Citadown)</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+  <link rel="stylesheet" href="../.././rdoc-style.css" type="text/css" media="screen" />
+</head>
+<body class="standalone-code">
+  <pre><span class="ruby-comment cmt"># File citadown, line 388</span>
+  <span class="ruby-keyword kw">def</span> <span class="ruby-identifier">get_keys_by_keyword</span>(<span class="ruby-identifier">keyword</span>)
+    <span class="ruby-keyword kw">return</span> <span class="ruby-keyword kw">nil</span> <span class="ruby-keyword kw">if</span> <span class="ruby-keyword kw">not</span> <span class="ruby-identifier">keyword</span>
+    <span class="ruby-identifier">puts</span> <span class="ruby-node">&quot;% Downloading citations for keyword #{keyword}.&quot;</span> <span class="ruby-keyword kw">if</span> <span class="ruby-ivar">@options</span>.<span class="ruby-identifier">verbose</span>
+
+    <span class="ruby-identifier">dblpkeys</span> = []
+    <span class="ruby-identifier">body</span> = <span class="ruby-identifier">fetch_body</span>(<span class="ruby-constant">DBLP_MIRROR</span> <span class="ruby-operator">+</span> <span class="ruby-node">&quot;index.php?query=#{keyword}&quot;</span>)
+    <span class="ruby-identifier">body</span>.<span class="ruby-identifier">each</span> <span class="ruby-keyword kw">do</span> <span class="ruby-operator">|</span><span class="ruby-identifier">line</span><span class="ruby-operator">|</span>
+      <span class="ruby-identifier">hits</span> = <span class="ruby-identifier">$1</span> <span class="ruby-keyword kw">if</span> <span class="ruby-identifier">line</span> <span class="ruby-operator">=~</span> <span class="ruby-regexp re">/^\s*AC\.result\.H_boxes\[1\]=(.+)$/</span>
+      <span class="ruby-identifier">hits</span>.<span class="ruby-identifier">gsub</span>(<span class="ruby-node">/href=\\&quot;#{DBLP_BIBTEX}([^\\]+)\\&quot;/</span>) {<span class="ruby-operator">|</span><span class="ruby-identifier">l</span><span class="ruby-operator">|</span> <span class="ruby-identifier">dblpkeys</span> <span class="ruby-operator">&lt;&lt;</span> <span class="ruby-identifier">$1</span>} <span class="ruby-keyword kw">if</span> <span class="ruby-identifier">hits</span>
+    <span class="ruby-keyword kw">end</span>
+    <span class="ruby-keyword kw">return</span> <span class="ruby-identifier">dblpkeys</span>
+  <span class="ruby-keyword kw">end</span></pre>
+</body>
+</html>

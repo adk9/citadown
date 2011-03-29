@@ -5,18 +5,18 @@
 
 <html>
 <head>
-  <title>check_conf (Citadown)</title>
+  <title>check_key (Citadown)</title>
   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
   <link rel="stylesheet" href="../.././rdoc-style.css" type="text/css" media="screen" />
 </head>
 <body class="standalone-code">
-  <pre><span class="ruby-comment cmt"># File citadown, line 174</span>
-  <span class="ruby-keyword kw">def</span> <span class="ruby-identifier">check_conf</span>(<span class="ruby-identifier">conf</span>)
-    <span class="ruby-identifier">bibentries</span> = <span class="ruby-identifier">get_conf</span>(<span class="ruby-identifier">conf</span>)
+  <pre><span class="ruby-comment cmt"># File citadown, line 208</span>
+  <span class="ruby-keyword kw">def</span> <span class="ruby-identifier">check_key</span>(<span class="ruby-identifier">key</span>)
+    <span class="ruby-identifier">bibentries</span> = <span class="ruby-identifier">get_bibtex</span>(<span class="ruby-identifier">key</span>)
     <span class="ruby-keyword kw">if</span> <span class="ruby-identifier">bibentries</span>.<span class="ruby-identifier">length</span> <span class="ruby-operator">&gt;</span> <span class="ruby-value">0</span>
-      <span class="ruby-identifier">puts</span> <span class="ruby-node">&quot;% Conference name #{conf}\t\t\t\t.. OK&quot;</span>
+      <span class="ruby-identifier">puts</span> <span class="ruby-node">&quot;% bibTex entry #{key}\t\t\t\t.. OK&quot;</span>
     <span class="ruby-keyword kw">else</span>
-      <span class="ruby-identifier">puts</span> <span class="ruby-node">&quot;% Conference name #{conf}\t\t\t\t.. NOT FOUND&quot;</span>
+      <span class="ruby-identifier">puts</span> <span class="ruby-node">&quot;% bibTex entry #{key}\t\t\t\t.. NOT FOUND&quot;</span>
     <span class="ruby-keyword kw">end</span>
     <span class="ruby-keyword kw">return</span> <span class="ruby-identifier">bibentries</span>
   <span class="ruby-keyword kw">end</span></pre>

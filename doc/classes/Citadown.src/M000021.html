@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE html 
+     PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html>
+<head>
+  <title>print_entries (Citadown)</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+  <link rel="stylesheet" href="../.././rdoc-style.css" type="text/css" media="screen" />
+</head>
+<body class="standalone-code">
+  <pre><span class="ruby-comment cmt"># File citadown, line 447</span>
+  <span class="ruby-keyword kw">def</span> <span class="ruby-identifier">print_entries</span>(<span class="ruby-identifier">entries</span>)
+    <span class="ruby-identifier">entry_keys</span> = []
+    <span class="ruby-identifier">dblp</span> = <span class="ruby-constant">File</span>.<span class="ruby-identifier">new</span>(<span class="ruby-ivar">@options</span>.<span class="ruby-identifier">output</span>, <span class="ruby-value str">&quot;w&quot;</span>)
+    <span class="ruby-keyword kw">if</span> <span class="ruby-constant">File</span>.<span class="ruby-identifier">exists?</span>(<span class="ruby-value str">&quot;ignore.cit&quot;</span>)
+      <span class="ruby-identifier">ignore_entries</span> = <span class="ruby-constant">File</span>.<span class="ruby-identifier">open</span>(<span class="ruby-value str">&quot;ignore.cit&quot;</span>, <span class="ruby-value str">&quot;r&quot;</span>) { <span class="ruby-operator">|</span><span class="ruby-identifier">f</span><span class="ruby-operator">|</span> <span class="ruby-identifier">f</span>.<span class="ruby-identifier">read</span> }
+      <span class="ruby-identifier">entries</span>.<span class="ruby-identifier">each</span> <span class="ruby-keyword kw">do</span> <span class="ruby-operator">|</span><span class="ruby-identifier">entry</span><span class="ruby-operator">|</span>
+        <span class="ruby-identifier">key</span> = <span class="ruby-identifier">$1</span> <span class="ruby-keyword kw">if</span> <span class="ruby-identifier">entry</span>.<span class="ruby-identifier">first</span> <span class="ruby-operator">=~</span> <span class="ruby-regexp re">/^@\w+\{(.+),$/</span>
+        <span class="ruby-keyword kw">next</span> <span class="ruby-keyword kw">if</span> <span class="ruby-identifier">entry_keys</span>.<span class="ruby-identifier">include?</span>(<span class="ruby-identifier">key</span>)
+        <span class="ruby-identifier">a</span> = <span class="ruby-identifier">entry</span>.<span class="ruby-identifier">to_a</span>
+        <span class="ruby-identifier">ignore_entries</span>.<span class="ruby-identifier">each</span> <span class="ruby-keyword kw">do</span> <span class="ruby-operator">|</span><span class="ruby-identifier">ie</span><span class="ruby-operator">|</span>
+          <span class="ruby-identifier">a</span>.<span class="ruby-identifier">reject!</span>{<span class="ruby-operator">|</span><span class="ruby-identifier">l</span><span class="ruby-operator">|</span> <span class="ruby-identifier">l</span> <span class="ruby-operator">=~</span> <span class="ruby-node">/^\s*#{ie.chomp}\s*=.*$/</span>}
+        <span class="ruby-keyword kw">end</span>
+        <span class="ruby-identifier">sle</span> = <span class="ruby-identifier">a</span>[<span class="ruby-value">-2</span>]
+        <span class="ruby-identifier">sle</span>[<span class="ruby-identifier">sle</span>.<span class="ruby-identifier">length</span> <span class="ruby-operator">-</span> <span class="ruby-value">2</span>] = <span class="ruby-value str">''</span> <span class="ruby-keyword kw">if</span> <span class="ruby-identifier">sle</span>[<span class="ruby-identifier">sle</span>.<span class="ruby-identifier">length</span> <span class="ruby-operator">-</span> <span class="ruby-value">2</span>] <span class="ruby-operator">==</span> <span class="ruby-value">44</span>
+        <span class="ruby-identifier">dblp</span>.<span class="ruby-identifier">print</span> <span class="ruby-identifier">a</span>.<span class="ruby-identifier">join</span>
+        <span class="ruby-comment cmt"># premature knuth is the optimisation of all evil. </span>
+        <span class="ruby-identifier">entry_keys</span> <span class="ruby-operator">&lt;&lt;</span> <span class="ruby-identifier">key</span>
+      <span class="ruby-keyword kw">end</span>
+    <span class="ruby-keyword kw">else</span>
+      <span class="ruby-identifier">dblp</span>.<span class="ruby-identifier">print</span> <span class="ruby-identifier">entries</span>
+    <span class="ruby-keyword kw">end</span>
+    <span class="ruby-identifier">dblp</span>.<span class="ruby-identifier">close</span>()
+    <span class="ruby-identifier">puts</span> <span class="ruby-node">&quot;Wrote #{@options.output}&quot;</span>
+  <span class="ruby-keyword kw">end</span></pre>
+</body>
+</html>
