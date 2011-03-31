@@ -1,0 +1,26 @@
+#!/usr/bin/env ruby
+
+require 'rubygems'
+require 'engtagger'
+
+# Create a parser object
+tgr = EngTagger.new
+
+filename = ARGV[0]
+if not filename
+  puts "usage: #{File.basename(__FILE__)} <filename>"
+  exit
+end
+
+text = File.open(filename, "r") { |f| f.read }
+text = text.gsub(/\\[^\s]*/m, '')
+
+print text
+
+# Add part-of-speech tags to text
+tagged = tgr.add_tags(text)
+
+# Get a list of all nouns and noun phrases with occurrence counts
+word_list = tgr.get_proper_nouns(tagged)
+
+p word_list
